@@ -1,0 +1,2 @@
+NAME=mqtt-codec
+BUILDDIR=/dev/shm/$(NAME-LINK)
