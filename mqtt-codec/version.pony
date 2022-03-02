@@ -2,21 +2,21 @@ primitive MqttVersion5
   """
   Fifth version of the MQTT protocol.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     5
 
 primitive MqttVersion311
   """
   Fourth version of the MQTT protocol.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     4
 
 primitive MqttVersion31
   """
   Third version of the MQTT protocol.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     3
 
 type MqttVersion is (MqttVersion5 | MqttVersion311 | MqttVersion31)

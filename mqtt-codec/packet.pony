@@ -2,7 +2,7 @@ use "buffered"
 use "itertools"
 
 primitive MqttReversed
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x00
 
 primitive MqttConnect
@@ -11,13 +11,13 @@ primitive MqttConnect
 
   Direction: Client to Server.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x10
 
-  fun decode(reader: Reader, header: U8, remaining: USize): MqttDecodeResultType[MqttConnectPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box): MqttDecodeResultType[MqttConnectPacket val] val ? =>
     MqttConnectDecoder(reader, header, remaining) ?
 
-  fun encode(pkt: MqttConnectPacket box, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttConnectPacket box, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttConnectEncoder(pkt, version)
 
 primitive MqttConnAck
@@ -26,13 +26,13 @@ primitive MqttConnAck
 
   Direction: Server to Client.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x20
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttConnAckPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttConnAckPacket val] val ? =>
     MqttConnAckDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttConnAckPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttConnAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttConnAckEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttPublish
@@ -43,13 +43,13 @@ primitive MqttPublish
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x30
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttPublishPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPublishPacket val] val ? =>
     MqttPublishDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttPublishPacket box, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttPublishPacket box, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttPublishEncoder(pkt, version)
 
 primitive MqttPubAck
@@ -60,13 +60,13 @@ primitive MqttPubAck
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x40
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttPubAckPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPubAckPacket val] val ? =>
     MqttPubAckDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttPubAckPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttPubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttPubAckEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttPubRec
@@ -77,13 +77,13 @@ primitive MqttPubRec
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x50
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttPubRecPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPubRecPacket val] val ? =>
     MqttPubRecDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttPubRecPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttPubRecPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttPubRecEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttPubRel
@@ -94,13 +94,13 @@ primitive MqttPubRel
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x60
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttPubRelPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPubRelPacket val] val ? =>
     MqttPubRelDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttPubRelPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttPubRelPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttPubRelEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttPubComp
@@ -111,13 +111,13 @@ primitive MqttPubComp
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x70
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttPubCompPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPubCompPacket val] val ? =>
     MqttPubCompDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttPubCompPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttPubCompPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttPubCompEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttSubscribe
@@ -126,13 +126,13 @@ primitive MqttSubscribe
 
   Direction: Client to Server.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x80
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttSubscribePacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttSubscribePacket val] val ? =>
     MqttSubscribeDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttSubscribePacket box, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttSubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttSubscribeEncoder(pkt, version)
 
 primitive MqttSubAck
@@ -141,13 +141,13 @@ primitive MqttSubAck
 
   Direction: Server to Client.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x90
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttSubAckPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttSubAckPacket val] val ? =>
     MqttSubAckDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttSubAckPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttSubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttSubAckEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttUnsubscribe
@@ -156,13 +156,13 @@ primitive MqttUnsubscribe
 
   Direction: Client to Server.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0xA0
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttUnsubscribePacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttUnsubscribePacket val] val ? =>
     MqttUnsubscribeDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttUnsubscribePacket box, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttUnsubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttUnsubscribeEncoder(pkt, version)
 
 primitive MqttUnsubAck
@@ -171,13 +171,13 @@ primitive MqttUnsubAck
 
   Direction: Server to Client.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0xB0
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttUnsubAckPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttUnsubAckPacket val] val ? =>
     MqttUnsubAckDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttUnsubAckPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttUnsubAckEncoder(pkt, maximum_packet_size, version)
 
 primitive MqttPingReq
@@ -186,7 +186,7 @@ primitive MqttPingReq
 
   Direction: Client to Server.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0xC0
 
 primitive MqttPingResp
@@ -195,7 +195,7 @@ primitive MqttPingResp
 
   Direction: Server to Client.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0xD0
 
 primitive MqttDisconnect
@@ -206,13 +206,13 @@ primitive MqttDisconnect
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0xE0
 
-  fun decode(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttDisconnectPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttDisconnectPacket val] val ? =>
     MqttDisconnectDecoder(reader, header, remaining, version) ?
 
-  fun encode(pkt: MqttDisconnectPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun encode(pkt: MqttDisconnectPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     MqttDisconnectEncoder(pkt, maximum_packet_size,version)
 
 primitive MqttAuth
@@ -223,13 +223,13 @@ primitive MqttAuth
     1. Client to Server
     2. Server to Client
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0xF0
 
-  fun decode(reader: Reader, header: U8, remaining: USize): MqttDecodeResultType[MqttAuthPacket] ? =>
+  fun decode(reader: Reader, header: U8 box, remaining: USize box): MqttDecodeResultType[MqttAuthPacket val] val ? =>
     MqttAuthDecoder(reader, header, remaining) ?
 
-  fun encode(pkt: MqttAuthPacket box, maximum_packet_size: (USize | None) = None): Array[U8] val =>
+  fun encode(pkt: MqttAuthPacket box, maximum_packet_size: (USize box | None) = None): Array[U8 val] val =>
     MqttAuthEncoder(pkt, maximum_packet_size)
 
 type MqttControlPacketType is (MqttConnectPacket | MqttConnAckPacket | MqttPublishPacket | MqttPubAckPacket | MqttPubRecPacket | MqttPubRelPacket | MqttPubCompPacket | MqttSubscribePacket | MqttSubAckPacket | MqttUnsubscribePacket | MqttUnsubAckPacket | MqttPingReqPacket | MqttPingRespPacket | MqttDisconnectPacket | MqttAuthPacket)

@@ -14,23 +14,25 @@ class _TestAuth is UnitTest
     let origin = _mqtt5_packet()
 
     let buf = MqttAuth.encode(origin)
+    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
+    h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
       match packet
-      | let pkt: MqttAuthPacket =>
-        try h.assert_eq[U8]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
-        try h.assert_eq[String]((pkt.authentication_method as String), "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
-        try h.assert_array_eq[U8]((pkt.authentication_data as Array[U8]), [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
-        try h.assert_eq[String]((pkt.reason_string as String), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
-        try h.assert_eq[USize]((pkt.user_properties as Map[String, String]).size(), 2) else h.fail("Expect 2 items in user-properties") end
-        try h.assert_eq[String]((pkt.user_properties as Map[String, String])("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
-        try h.assert_eq[String]((pkt.user_properties as Map[String, String])("hello")?, "world") else h.fail("Expect hello in user-properties to be world") end
+      | let pkt: MqttAuthPacket val =>
+        try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode val)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        try h.assert_eq[String val]((pkt.authentication_method as String val), "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
+        try h.assert_array_eq[U8 val]((pkt.authentication_data as Array[U8 val] val), [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
+        try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
+        try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
+        try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
+        try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("hello")?, "world") else h.fail("Expect hello in user-properties to be world") end
       else
         h.fail("Encoded packet is not AUTH")
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
-    | (MqttDecodeError, let err: String) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail(err)
     end
 
@@ -38,22 +40,24 @@ class _TestAuth is UnitTest
     let origin = _mqtt5_packet()
 
     let buf = MqttAuth.encode(origin, 45)
+    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
+    h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
       match packet
-      | let pkt: MqttAuthPacket =>
-        try h.assert_eq[U8]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
-        try h.assert_eq[String]((pkt.authentication_method as String), "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
-        try h.assert_array_eq[U8]((pkt.authentication_data as Array[U8]), [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
-        try h.assert_eq[String]((pkt.reason_string as String), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
-        try h.assert_eq[USize]((pkt.user_properties as Map[String, String]).size(), 1) else h.fail("Expect 1 items in user-properties") end
-        try h.assert_eq[String]((pkt.user_properties as Map[String, String])("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
+      | let pkt: MqttAuthPacket val =>
+        try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        try h.assert_eq[String val]((pkt.authentication_method as String val), "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
+        try h.assert_array_eq[U8 val]((pkt.authentication_data as Array[U8 val] val), [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
+        try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
+        try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 1) else h.fail("Expect 1 items in user-properties") end
+        try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
       else
         h.fail("Encoded packet is not AUTH")
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
-    | (MqttDecodeError, let err: String) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail(err)
     end
 
@@ -64,23 +68,25 @@ class _TestAuth is UnitTest
         reason_code' = MqttSuccess
       )
 
-    let buf = MqttAuth.encode(origin)
+    let buf = MqttAuth.encode(consume origin)
+    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
+    h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
       match packet
-      | let pkt: MqttAuthPacket =>
-        try h.assert_eq[U8]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+      | let pkt: MqttAuthPacket val =>
+        try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
       else
         h.fail("Encoded packet is not AUTH")
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
-    | (MqttDecodeError, let err: String) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail(err)
     end
 
   fun _mqtt5_packet(): MqttAuthPacket =>
-    let user_properties: Map[String, String] = Map[String, String]()
+    let user_properties: Map[String val, String val] iso = recover iso Map[String val, String val](2) end
     user_properties("foo") = "bar"
     user_properties("hello") = "world"
     MqttAuthPacket(
@@ -89,5 +95,5 @@ class _TestAuth is UnitTest
       authentication_method' = "Plain",
       authentication_data' = [0; 1; 2; 3],
       reason_string' = "Unknown",
-      user_properties' = user_properties
+      user_properties' = consume user_properties
     )

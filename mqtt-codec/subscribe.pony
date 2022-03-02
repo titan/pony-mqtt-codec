@@ -5,7 +5,7 @@ primitive MqttSendAtSubscribe
   """
   Send retained messages at the time of the subscribe.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x0
 
 primitive MqttSendAtSubscribeIfNotExist
@@ -13,20 +13,20 @@ primitive MqttSendAtSubscribeIfNotExist
   Send retained messages at subscribe only if the subscription does not
   currently exist.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x10
 
 primitive MqttDoNotSendAtSubscribe
   """
   Do not send retained messages at the time of the subscribe.
   """
-  fun apply(): U8 =>
+  fun apply(): U8 val =>
     0x20
 
 type MqttRetainHandling is (MqttSendAtSubscribe | MqttSendAtSubscribeIfNotExist | MqttDoNotSendAtSubscribe)
 
 class MqttTopicSubscription
-  let topic_filter: String
+  let topic_filter: String val
   """
   It indicates the Topics to which the Client wants to subscribe
 
@@ -35,7 +35,7 @@ class MqttTopicSubscription
   * mqtt-3.1
   """
 
-  let qos_level: MqttQoS
+  let qos_level: MqttQoS val
   """
   This gives the maximum QoS level at which the Server can send Application
   Messages to the Client.
@@ -45,7 +45,7 @@ class MqttTopicSubscription
   * mqtt-3.1
   """
 
-  let no_local: Bool
+  let no_local: Bool val
   """
   If the value is true, Application Messages MUST NOT be forwarded to a
   connection with a ClientID equal to the ClientID of the publishing connection.
@@ -53,7 +53,7 @@ class MqttTopicSubscription
   * mqtt-5
   """
 
-  let retain_as_published: Bool
+  let retain_as_published: Bool val
   """
   If it is true, Application Messages forwarded using this subscription keep
   the RETAIN flag they were published with. If it is false, Application
@@ -64,7 +64,7 @@ class MqttTopicSubscription
   * mqtt-5
   """
 
-  let retain_handling: (MqttRetainHandling | None)
+  let retain_handling: (MqttRetainHandling val | None)
   """
   This option specifies whether retained messages are sent when the subscription
   is established. This does not affect the sending of retained messages at any
@@ -74,12 +74,12 @@ class MqttTopicSubscription
   * mqtt-5
   """
 
-  new create(
-      topic_filter': String,
-      qos_level': MqttQoS,
-      no_local': Bool = false,
-      retain_as_published': Bool = false,
-      retain_handling': (MqttRetainHandling | None) = None
+  new iso create(
+      topic_filter': String val,
+      qos_level': MqttQoS val,
+      no_local': Bool val = false,
+      retain_as_published': Bool val = false,
+      retain_handling': (MqttRetainHandling val | None) = None
   ) =>
       topic_filter = topic_filter'
       qos_level = qos_level'
@@ -88,7 +88,7 @@ class MqttTopicSubscription
       retain_handling = retain_handling'
 
 class MqttSubscribePacket
-  let packet_identifier: U16
+  let packet_identifier: U16 val
   """
   The Packet Identifier field.
 
@@ -97,7 +97,7 @@ class MqttSubscribePacket
   * mqtt-3.1
   """
 
-  let subscription_identifier: (ULong | None)
+  let subscription_identifier: (ULong val | None)
   """
   The Subscription Identifier is a Variable Byte Integer representing the
   identifier of the subscription.
@@ -105,7 +105,7 @@ class MqttSubscribePacket
   * mqtt-5
   """
 
-  let user_properties: (Map[String, String] | None)
+  let user_properties: (Map[String val, String val] val | None)
   """
   User Properties on the SUBSCRIBE packet can be used to send subscription
   related properties from the Client to the Server.
@@ -113,7 +113,7 @@ class MqttSubscribePacket
   * mqtt-5
   """
 
-  let topic_subscriptions: Array[MqttTopicSubscription]
+  let topic_subscriptions: Array[MqttTopicSubscription val] val
   """
   This indicates the Topics to which the Client wants to subscribe.
 
@@ -122,11 +122,11 @@ class MqttSubscribePacket
   * mqtt-3.1
   """
 
-  new create(
-      packet_identifier': U16,
-      topic_subscriptions': Array[MqttTopicSubscription],
-      subscription_identifier': (ULong | None) = None,
-      user_properties': (Map[String, String] | None) = None
+  new iso create(
+      packet_identifier': U16 val,
+      topic_subscriptions': Array[MqttTopicSubscription val] val,
+      subscription_identifier': (ULong val | None) = None,
+      user_properties': (Map[String val, String val] val | None) = None
   ) =>
       packet_identifier = packet_identifier'
       topic_subscriptions = topic_subscriptions'
@@ -134,18 +134,18 @@ class MqttSubscribePacket
       user_properties = user_properties'
 
 primitive MqttSubscribeDecoder
-  fun apply(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttSubscribePacket] ? =>
+  fun apply(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttSubscribePacket val] val ? =>
     var consumed: USize = 0
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
     consumed = consumed + consumed1
     var subscription_identifier: (ULong | None) = None
-    var user_properties: (Map[String, String] | None) = None
+    var user_properties: (Map[String val, String val] iso | None) = None
     if \likely\ version() == MqttVersion5() then
       (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
       consumed = consumed + consumed2
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
-      user_properties = Map[String, String]()
+      user_properties = recover iso Map[String val, String val] end
       while decoded_length < property_length do
         let identifier = reader.u8() ?
         decoded_length = decoded_length + 1
@@ -156,13 +156,13 @@ primitive MqttSubscribeDecoder
           decoded_length = decoded_length + consumed3
         | MqttUserProperty() =>
           (let user_property', let consumed3) = MqttUserProperty.decode(reader) ?
-          try (user_properties as Map[String, String]).insert(user_property'._1, user_property'._2) end
+          try (user_properties as Map[String val, String val] iso).insert(user_property'._1, user_property'._2) end
           decoded_length = decoded_length + consumed3
         end
       end
       consumed = consumed + property_length
     end
-    var topic_subscriptions: Array[MqttTopicSubscription] = Array[MqttTopicSubscription]()
+    var topic_subscriptions: Array[MqttTopicSubscription val] iso = recover iso Array[MqttTopicSubscription val] end
     while consumed < remaining do
       (let topic_filter: String, let consumed4) = MqttUtf8String.decode(reader) ?
       consumed = consumed + consumed4
@@ -191,22 +191,22 @@ primitive MqttSubscribeDecoder
       let packet =
         MqttSubscribePacket(
           packet_identifier,
-          topic_subscriptions,
+          consume topic_subscriptions,
           subscription_identifier,
-          user_properties
+          consume user_properties
         )
       (MqttDecodeDone, packet)
     else
       let packet =
         MqttSubscribePacket(
           packet_identifier,
-          topic_subscriptions
+          consume topic_subscriptions
         )
       (MqttDecodeDone, packet)
     end
 
 primitive MqttSubscribeMeasurer
-  fun variable_header_size(data: MqttSubscribePacket box, version: MqttVersion = MqttVersion5): USize val =>
+  fun variable_header_size(data: MqttSubscribePacket box, version: MqttVersion box = MqttVersion5): USize val =>
     var size: USize = 0
     size = MqttTwoByteInteger.size(data.packet_identifier)
     if \likely\ version() == MqttVersion5() then
@@ -219,14 +219,14 @@ primitive MqttSubscribeMeasurer
     var size: USize = 0
     size = size +
         match data.subscription_identifier
-        | let subscription_identifier: ULong =>
+        | let subscription_identifier: ULong box =>
           MqttSubscriptionIdentifier.size(subscription_identifier)
         else
           0
         end
 
     match data.user_properties
-    | let user_properties: Map[String, String] box =>
+    | let user_properties: Map[String val, String val] box =>
       for item in user_properties.pairs() do
         size = size + MqttUserProperty.size(item)
       end
@@ -243,7 +243,7 @@ primitive MqttSubscribeMeasurer
     size
 
 primitive MqttTopicSubscriptionEncoder
-  fun apply(buf: Array[U8], data: MqttTopicSubscription box, version: MqttVersion = MqttVersion5): USize val =>
+  fun apply(buf: Array[U8], data: MqttTopicSubscription box, version: MqttVersion box = MqttVersion5): USize val =>
     var cnt: USize = MqttUtf8String.encode(buf, data.topic_filter)
     let option: U8 =
       if \likely\ version() == MqttVersion5() then
@@ -256,7 +256,7 @@ primitive MqttTopicSubscriptionEncoder
     cnt
 
 primitive MqttSubscribeEncoder
-  fun apply(data: MqttSubscribePacket box, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun apply(data: MqttSubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8] val =>
     let size = (MqttSubscribeMeasurer.variable_header_size(data, version) + MqttSubscribeMeasurer.payload_size(data)).ulong()
 
     var buf' = recover iso Array[U8](MqttVariableByteInteger.size(size) + size.usize() + 1) end
@@ -271,12 +271,12 @@ primitive MqttSubscribeEncoder
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
       match data.subscription_identifier
-      | let subscription_identifier: ULong =>
+      | let subscription_identifier: ULong box =>
         MqttSubscriptionIdentifier.encode(buf, subscription_identifier)
       end
 
       match data.user_properties
-      | let user_properties: Map[String, String] box =>
+      | let user_properties: Map[String val, String val] box =>
         for item in user_properties.pairs() do
           MqttUserProperty.encode(buf, item)
         end

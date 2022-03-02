@@ -4,7 +4,7 @@ use "collections"
 type MqttPubRelReasonCode is (MqttSuccess | MqttPacketIdentifierNotFound | MqttUnspecifiedError)
 
 class MqttPubRelPacket
-  let packet_identifier: U16
+  let packet_identifier: U16 val
   """
   Packet Identifier from the PUBLISH packet that is being acknowledged
 
@@ -13,14 +13,14 @@ class MqttPubRelPacket
   * mqtt-3.1
   """
 
-  let reason_code: (MqttPubRelReasonCode | None)
+  let reason_code: (MqttPubRelReasonCode val | None)
   """
   PUBACK Reason Code
 
   * mqtt-5
   """
 
-  let reason_string: (String | None)
+  let reason_string: (String val | None)
   """
   It represents the reason associated with this response. This Reason String is
   a human readable string designed for diagnostics and is not intended to be
@@ -29,7 +29,7 @@ class MqttPubRelPacket
   * mqtt-5
   """
 
-  let user_properties: (Map[String, String] | None)
+  let user_properties: (Map[String val, String val] val | None)
   """
   This property can be used to provide additional diagnostic or other
   information.
@@ -37,11 +37,11 @@ class MqttPubRelPacket
   * mqtt-5
   """
 
-  new create(
-      packet_identifier': U16,
-      reason_code': (MqttPubRelReasonCode | None) = None,
-      reason_string': (String | None) = None,
-      user_properties': (Map[String, String] | None) = None
+  new iso create(
+      packet_identifier': U16 val,
+      reason_code': (MqttPubRelReasonCode val | None) = None,
+      reason_string': (String val | None) = None,
+      user_properties': (Map[String val, String val] val | None) = None
   ) =>
       packet_identifier = packet_identifier'
       reason_code = reason_code'
@@ -49,7 +49,7 @@ class MqttPubRelPacket
       user_properties = user_properties'
 
 primitive MqttPubRelDecoder
-  fun apply(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttPubRelPacket] ? =>
+  fun apply(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPubRelPacket val] val ? =>
     (let packet_identifier: U16, _) = MqttTwoByteInteger.decode(reader) ?
     if \likely\ version() == MqttVersion5() then
       let reason_code: (MqttPubRelReasonCode | None) =
@@ -63,7 +63,7 @@ primitive MqttPubRelDecoder
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
       var reason_string: (String | None) = None
-      var user_properties: Map[String, String] = Map[String, String]()
+      var user_properties: Map[String, String] iso = recover iso Map[String, String] end
       while decoded_length < property_length do
         let identifier = reader.u8() ?
         decoded_length = decoded_length + 1
@@ -78,39 +78,41 @@ primitive MqttPubRelDecoder
           decoded_length = decoded_length + consumed
         end
       end
-      let packet = MqttPubRelPacket(
-        packet_identifier,
-        reason_code,
-        reason_string,
-        user_properties
-      )
+      let packet =
+        MqttPubRelPacket(
+          packet_identifier,
+          reason_code,
+          reason_string,
+          consume user_properties
+        )
       (MqttDecodeDone, packet)
     else
-      let packet = MqttPubRelPacket(
-        packet_identifier
-      )
+      let packet =
+        MqttPubRelPacket(
+          packet_identifier
+        )
       (MqttDecodeDone, packet)
     end
 
 primitive MqttPubRelMeasurer
-  fun variable_header_size(data: MqttPubRelPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): USize val =>
+  fun variable_header_size(data: MqttPubRelPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>
     var size: USize = 2 // packet identifier
     if \likely\ version() == MqttVersion5() then
       size = size + 1 // reason code
-      let properties_length = properties_size(data, try (maximum_packet_size as USize) - size else None end)
+      let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size else None end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
     size
 
-  fun properties_size(data: MqttPubRelPacket box, maximum_packet_size: (USize | None) = None): USize val =>
+  fun properties_size(data: MqttPubRelPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
     var size: USize = 0
 
     match data.reason_string
-    | let reason_string: String =>
+    | let reason_string: String box =>
       let length = MqttReasonString.size(reason_string)
       match maximum_packet_size
-      | let maximum_packet_size': USize =>
-        if (size + length) < maximum_packet_size' then
+      | let maximum_packet_size': USize box =>
+        if maximum_packet_size' >= (size + length) then
           size = size + length
         end
       else
@@ -119,12 +121,12 @@ primitive MqttPubRelMeasurer
     end
 
     match data.user_properties
-    | let user_properties: Map[String, String] box =>
+    | let user_properties: Map[String val, String val] box =>
       match maximum_packet_size
-      | let maximum_packet_size': USize =>
+      | let maximum_packet_size': USize box =>
           for item in user_properties.pairs() do
             let item_size = MqttUserProperty.size(item)
-            if (size + item_size) < maximum_packet_size' then
+            if maximum_packet_size' >= (size + item_size) then
               size = size + item_size
             else
               break
@@ -140,11 +142,11 @@ primitive MqttPubRelMeasurer
     size
 
 primitive MqttPubRelEncoder
-  fun apply(data: MqttPubRelPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun apply(data: MqttPubRelPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8] val =>
     var maximum_size: (USize | None) = None
     var remaining: USize = 0
     match maximum_packet_size
-    | let maximum_packet_size': USize =>
+    | let maximum_packet_size': USize box =>
       var maximum: USize = maximum_packet_size' - 1 - 1
       remaining = MqttPubRelMeasurer.variable_header_size(data, maximum, version)
       var remaining_length = MqttVariableByteInteger.size(remaining.ulong())
@@ -183,14 +185,14 @@ primitive MqttPubRelEncoder
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
       match data.reason_string
-      | \unlikely\ let reason_string: String =>
+      | \unlikely\ let reason_string: String box =>
         if (buf.size() + MqttReasonString.size(reason_string)) <= total_size then
           MqttReasonString.encode(buf, reason_string)
         end
       end
 
       match data.user_properties
-      | \unlikely\ let user_properties: Map[String, String] box =>
+      | \unlikely\ let user_properties: Map[String val, String val] box =>
         for item in user_properties.pairs() do
           if (buf.size() + MqttUserProperty.size(item)) <= total_size then
             MqttUserProperty.encode(buf, item)

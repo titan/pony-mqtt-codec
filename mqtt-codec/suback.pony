@@ -4,7 +4,7 @@ use "collections"
 type MqttSubAckReasonCode is (MqttGrantedQoS0 | MqttGrantedQoS1 | MqttGrantedQoS2 | MqttUnspecifiedError | MqttImplementationSpecificError | MqttNotAuthorized | MqttTopicFilterInvalid | MqttPacketIdentifierInUse | MqttQuotaExceeded | MqttSharedSubscriptionsNotSupported | MqttSubscriptionIdentifiersNotSupported | MqttWildcardSubscriptionsNotSupported)
 
 class MqttSubAckPacket
-  let packet_identifier: U16
+  let packet_identifier: U16 val
   """
   The Packet Identifier from the SUBSCRIBE Packet that is being acknowledged.
 
@@ -13,7 +13,7 @@ class MqttSubAckPacket
   * mqtt-3.1
   """
 
-  let reason_codes: Array[MqttSubAckReasonCode]
+  let reason_codes: Array[MqttSubAckReasonCode val] val
   """
   It contains a list of Reason Codes. Each Reason Code corresponds to a Topic
   Filter in the SUBSCRIBE packet being acknowledged. The order of Reason Codes
@@ -25,7 +25,7 @@ class MqttSubAckPacket
   * mqtt-3.1
   """
 
-  let reason_string: (String | None)
+  let reason_string: (String val | None)
   """
   This Reason String is a human readable string designed for diagnostics and
   SHOULD NOT be parsed by the Client.
@@ -33,7 +33,7 @@ class MqttSubAckPacket
   * mqtt-5
   """
 
-  let user_properties: (Map[String, String] | None)
+  let user_properties: (Map[String val, String val] val | None)
   """
   This property can be used to provide additional diagnostic or other
   information.
@@ -41,11 +41,11 @@ class MqttSubAckPacket
   * mqtt-5
   """
 
-  new create(
-      packet_identifier': U16,
-      reason_codes': Array[MqttSubAckReasonCode],
-      reason_string': (String | None) = None,
-      user_properties': (Map[String, String] | None) = None
+  new iso create(
+      packet_identifier': U16 val,
+      reason_codes': Array[MqttSubAckReasonCode val] val,
+      reason_string': (String val | None) = None,
+      user_properties': (Map[String val, String val] val | None) = None
   ) =>
       packet_identifier = packet_identifier'
       reason_codes = reason_codes'
@@ -53,18 +53,18 @@ class MqttSubAckPacket
       user_properties = user_properties'
 
 primitive MqttSubAckDecoder
-  fun apply(reader: Reader, header: U8, remaining: USize, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttSubAckPacket] ? =>
+  fun apply(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttSubAckPacket val] val ? =>
     var consumed: USize = 0
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
     consumed = consumed1
     var reason_string: (String | None) = None
-    var user_properties: (Map[String, String] | None) = None
+    var user_properties: (Map[String val, String val] iso | None) = None
     if \likely\ version() == MqttVersion5() then
       (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
       consumed = consumed + consumed2
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
-      user_properties = Map[String, String]()
+      user_properties = recover iso Map[String val, String val] end
       while decoded_length < property_length do
         let identifier = reader.u8() ?
         decoded_length = decoded_length + 1
@@ -75,13 +75,13 @@ primitive MqttSubAckDecoder
           decoded_length = decoded_length + consumed3
         | MqttUserProperty() =>
           (let user_property', let consumed3) = MqttUserProperty.decode(reader) ?
-          try (user_properties as Map[String, String]).insert(user_property'._1, user_property'._2) end
+          try (user_properties as Map[String val, String val] iso).insert(user_property'._1, user_property'._2) end
           decoded_length = decoded_length + consumed3
         end
       end
       consumed = consumed + property_length
     end
-    var reason_codes: Array[MqttSubAckReasonCode] = Array[MqttSubAckReasonCode](remaining - consumed)
+    var reason_codes: Array[MqttSubAckReasonCode val] iso = recover iso Array[MqttSubAckReasonCode](remaining - consumed) end
     while consumed < remaining do
       let code =
         match reader.u8() ?
@@ -103,33 +103,34 @@ primitive MqttSubAckDecoder
       consumed = consumed + 1
     end
 
-    let packet = MqttSubAckPacket(
-      packet_identifier,
-      reason_codes,
-      reason_string,
-      user_properties
-    )
+    let packet =
+      MqttSubAckPacket(
+        packet_identifier,
+        consume reason_codes,
+        reason_string,
+        consume user_properties
+      )
     (MqttDecodeDone, packet)
 
 primitive MqttSubAckMeasurer
-  fun variable_header_size(data: MqttSubAckPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): USize val =>
+  fun variable_header_size(data: MqttSubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>
     var size: USize = 2 // packet identifier
     let payload_size' = payload_size(data)
     if \likely\ version() == MqttVersion5() then
-      let properties_length = properties_size(data, try (maximum_packet_size as USize) - size - payload_size' else None end)
+      let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size - payload_size' else None end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
     size
 
-  fun properties_size(data: MqttSubAckPacket box, maximum_packet_size: (USize | None) = None): USize val =>
+  fun properties_size(data: MqttSubAckPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
     var size: USize = 0
 
     match data.reason_string
-    | let reason_string: String =>
+    | let reason_string: String box =>
       let length = MqttReasonString.size(reason_string)
       match maximum_packet_size
-      | let maximum_packet_size': USize =>
-        if (size + length) <= maximum_packet_size' then
+      | let maximum_packet_size': USize box =>
+        if maximum_packet_size' >= (size + length) then
           size = size + length
         end
       else
@@ -138,12 +139,12 @@ primitive MqttSubAckMeasurer
     end
 
     match data.user_properties
-    | let user_properties: Map[String, String] box =>
+    | let user_properties: Map[String val, String val] box =>
       match maximum_packet_size
-      | let maximum_packet_size': USize =>
+      | let maximum_packet_size': USize box =>
         for item in user_properties.pairs() do
           let item_size = MqttUserProperty.size(item)
-          if (size + item_size) <= maximum_packet_size' then
+          if maximum_packet_size' >= (size + item_size) then
             size = size + item_size
           else
             break
@@ -163,13 +164,13 @@ primitive MqttSubAckMeasurer
     size
 
 primitive MqttSubAckEncoder
-  fun apply(data: MqttSubAckPacket box, maximum_packet_size: (USize | None) = None, version: MqttVersion = MqttVersion5): Array[U8] val =>
+  fun apply(data: MqttSubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8] val =>
     let payload_size = MqttSubAckMeasurer.payload_size(data)
 
     var maximum_size: (USize | None) = None
     var remaining: USize = 0
     match maximum_packet_size
-    | let maximum_packet_size': USize =>
+    | let maximum_packet_size': USize box =>
       var maximum: USize = maximum_packet_size' - 1 - 1 - payload_size
       remaining = MqttSubAckMeasurer.variable_header_size(data, maximum, version)
       var remaining_length = MqttVariableByteInteger.size(remaining.ulong())
@@ -204,14 +205,14 @@ primitive MqttSubAckEncoder
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
       match data.reason_string
-      | let reason_string: String =>
+      | let reason_string: String box =>
         if (buf.size() + MqttReasonString.size(reason_string)) <= (total_size - payload_size) then
           MqttReasonString.encode(buf, reason_string)
         end
       end
 
       match data.user_properties
-      | let user_properties: Map[String, String] box =>
+      | let user_properties: Map[String val, String val] box =>
         for item in user_properties.pairs() do
           if (buf.size() + MqttUserProperty.size(item)) <= (total_size - payload_size) then
             MqttUserProperty.encode(buf, item)

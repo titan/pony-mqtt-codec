@@ -6,10 +6,10 @@ primitive MqttDecodeContinue
 
 primitive MqttDecodeError
 
-type MqttDecodeResultType[A] is ((MqttDecodeDone, A) | (MqttDecodeContinue, Array[U8] val) | (MqttDecodeError, String))
+type MqttDecodeResultType[A] is ((MqttDecodeDone, A) | (MqttDecodeContinue, Array[U8] val) | (MqttDecodeError, String val))
 
 primitive MqttDecoder
-  fun apply(data: Array[U8] val, version: MqttVersion = MqttVersion5): MqttDecodeResultType[MqttControlPacketType] ? =>
+  fun apply(data: Array[U8] val, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttControlPacketType val] val ? =>
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(data, 1) ? else (0, 0) end
     let remaining': USize = remaining.usize()
     if remaining' > ((data.size() - 1) - remainlen) then
