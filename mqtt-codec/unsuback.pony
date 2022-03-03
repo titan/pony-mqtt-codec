@@ -13,7 +13,7 @@ class MqttUnsubAckPacket
   * mqtt-3.1
   """
 
-  let reason_codes: Array[MqttUnsubAckReasonCode val] val
+  let reason_codes: (Array[MqttUnsubAckReasonCode val] val | None)
   """
   It contains a list of Reason Codes. Each Reason Code corresponds to a Topic
   Filter in the UNSUBSCRIBE packet being acknowledged. The order of Reason Codes
@@ -21,8 +21,6 @@ class MqttUnsubAckPacket
   UNSUBSCRIBE packet.
 
   * mqtt-5
-  * mqtt-3.1.1
-  * mqtt-3.1
   """
 
   let reason_string: (String val | None)
@@ -43,7 +41,7 @@ class MqttUnsubAckPacket
 
   new iso create(
       packet_identifier': U16 val,
-      reason_codes': Array[MqttUnsubAckReasonCode val] val,
+      reason_codes': (Array[MqttUnsubAckReasonCode val] val | None) = None,
       reason_string': (String val | None) = None,
       user_properties': (Map[String val, String val] val | None) = None
   ) =>
@@ -61,6 +59,7 @@ primitive MqttUnsubAckDecoder
 
     var reason_string: (String | None) = None
     var user_properties: (Map[String val, String val] iso | None) = None
+    var reason_codes: (Array[MqttUnsubAckReasonCode val] iso | None) = None
 
     if \likely\ version() == MqttVersion5() then
       (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
@@ -83,22 +82,22 @@ primitive MqttUnsubAckDecoder
         end
       end
       consumed = consumed + property_length
-    end
-    var reason_codes: Array[MqttUnsubAckReasonCode val] iso = recover iso Array[MqttUnsubAckReasonCode val](remaining - consumed) end
-    while consumed < remaining do
-      let code =
-        match reader.u8() ?
-        | MqttSuccess() => MqttSuccess
-        | MqttNoSubscriptionExisted() => MqttNoSubscriptionExisted
-        | MqttImplementationSpecificError() => MqttImplementationSpecificError
-        | MqttNotAuthorized5() => MqttNotAuthorized5
-        | MqttTopicFilterInvalid() => MqttTopicFilterInvalid
-        | MqttPacketIdentifierInUse() => MqttPacketIdentifierInUse
-        else
-          MqttUnspecifiedError
-        end
-      reason_codes.push(code)
-      consumed = consumed + 1
+      reason_codes = recover iso Array[MqttUnsubAckReasonCode val](remaining - consumed) end
+      while consumed < remaining do
+        let code =
+          match reader.u8() ?
+          | MqttSuccess() => MqttSuccess
+          | MqttNoSubscriptionExisted() => MqttNoSubscriptionExisted
+          | MqttImplementationSpecificError() => MqttImplementationSpecificError
+          | MqttNotAuthorized5() => MqttNotAuthorized5
+          | MqttTopicFilterInvalid() => MqttTopicFilterInvalid
+          | MqttPacketIdentifierInUse() => MqttPacketIdentifierInUse
+          else
+            MqttUnspecifiedError
+          end
+        try (reason_codes as Array[MqttUnsubAckReasonCode val] iso).push(code) end
+        consumed = consumed + 1
+      end
     end
     let packet =
       MqttUnsubAckPacket(
@@ -112,7 +111,7 @@ primitive MqttUnsubAckDecoder
 primitive MqttUnsubAckMeasurer
   fun variable_header_size(data: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>
     var size: USize = 2 // packet identifier
-    let payload_size' = payload_size(data)
+    let payload_size' = payload_size(data, version)
     if \likely\ version() == MqttVersion5() then
       let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size - payload_size' else None end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
@@ -156,13 +155,19 @@ primitive MqttUnsubAckMeasurer
 
     size
 
-  fun payload_size(data: MqttUnsubAckPacket box): USize val =>
-    var size: USize = data.reason_codes.size()
+  fun payload_size(data: MqttUnsubAckPacket box, version: MqttVersion box = MqttVersion5): USize val =>
+    var size: USize = 0
+    if \likely\ version() == MqttVersion5() then
+      match data.reason_codes
+      | let reason_codes: Array[MqttUnsubAckReasonCode val] box =>
+        size = reason_codes.size()
+      end
+    end
     size
 
 primitive MqttUnsubAckEncoder
   fun apply(data: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
-    let payload_size = MqttUnsubAckMeasurer.payload_size(data)
+    let payload_size = MqttUnsubAckMeasurer.payload_size(data, version)
 
     var maximum_size: (USize | None) = None
     var remaining: USize = 0
@@ -215,10 +220,13 @@ primitive MqttUnsubAckEncoder
           end
         end
       end
-    end
 
-    for item in data.reason_codes.values() do
-      buf.push(item())
+      match data.reason_codes
+      | let reason_codes: Array[MqttUnsubAckReasonCode val] box =>
+        for item in reason_codes.values() do
+          buf.push(item())
+        end
+      end
     end
 
     buf

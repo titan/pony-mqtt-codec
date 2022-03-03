@@ -12,17 +12,10 @@ class _TestUnsubAck is UnitTest
     _test_mqtt5_too_large(h) ?
 
   fun _test_mqtt311(h: TestHelper) ? =>
-    let reason_codes: Array[MqttUnsubAckReasonCode val] val = [
-      MqttSuccess
-      MqttNoSubscriptionExisted
-      MqttImplementationSpecificError
-      MqttUnspecifiedError
-    ]
     let origin =
       MqttUnsubAckPacket(
         where
-        packet_identifier' = 65535,
-        reason_codes' = consume reason_codes
+        packet_identifier' = 65535
       )
 
     let buf = MqttUnsubAck.encode(consume origin, None, MqttVersion311)
@@ -33,11 +26,6 @@ class _TestUnsubAck is UnitTest
       match packet
       | let pkt: MqttUnsubAckPacket val =>
         h.assert_eq[U16 val](pkt.packet_identifier, 65535)
-        h.assert_eq[USize val](pkt.reason_codes.size(), 4)
-        h.assert_eq[U8 val](pkt.reason_codes(0)?(), MqttSuccess())
-        h.assert_eq[U8 val](pkt.reason_codes(1)?(), MqttNoSubscriptionExisted())
-        h.assert_eq[U8 val](pkt.reason_codes(2)?(), MqttImplementationSpecificError())
-        h.assert_eq[U8 val](pkt.reason_codes(3)?(), MqttUnspecifiedError())
       else
         h.fail("Encoded packet is not UNSUBACK")
       end
@@ -58,11 +46,11 @@ class _TestUnsubAck is UnitTest
       match packet
       | let pkt: MqttUnsubAckPacket val =>
         h.assert_eq[U16 val](pkt.packet_identifier, 65535)
-        h.assert_eq[USize val](pkt.reason_codes.size(), 4)
-        h.assert_eq[U8 val](pkt.reason_codes(0)?(), MqttSuccess())
-        h.assert_eq[U8 val](pkt.reason_codes(1)?(), MqttNoSubscriptionExisted())
-        h.assert_eq[U8 val](pkt.reason_codes(2)?(), MqttImplementationSpecificError())
-        h.assert_eq[U8 val](pkt.reason_codes(3)?(), MqttUnspecifiedError())
+        try h.assert_eq[USize val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val).size(), 4) else h.fail("Expect 4 items in reason-codes but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(0)?(), MqttSuccess()) else h.fail("Expect 1st reason-code to be MqttSuccess but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(1)?(), MqttNoSubscriptionExisted()) else h.fail("Expect 2nd reason-code to be MqttNoSubscriptionExisted but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(2)?(), MqttImplementationSpecificError()) else h.fail("Expect 3rd reason-code to be MqttImplementationSpecificError but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(3)?(), MqttUnspecifiedError()) else h.fail("Expect 4th reason-code to be MqttUnspecifiedError but got None") end
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
@@ -87,11 +75,11 @@ class _TestUnsubAck is UnitTest
       match packet
       | let pkt: MqttUnsubAckPacket val =>
         h.assert_eq[U16 val](pkt.packet_identifier, 65535)
-        h.assert_eq[USize val](pkt.reason_codes.size(), 4)
-        h.assert_eq[U8 val](pkt.reason_codes(0)?(), MqttSuccess())
-        h.assert_eq[U8 val](pkt.reason_codes(1)?(), MqttNoSubscriptionExisted())
-        h.assert_eq[U8 val](pkt.reason_codes(2)?(), MqttImplementationSpecificError())
-        h.assert_eq[U8 val](pkt.reason_codes(3)?(), MqttUnspecifiedError())
+        try h.assert_eq[USize val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val).size(), 4) else h.fail("Expect 4 items in reason-codes but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(0)?(), MqttSuccess()) else h.fail("Expect 1st reason-code to be MqttSuccess but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(1)?(), MqttNoSubscriptionExisted()) else h.fail("Expect 2nd reason-code to be MqttNoSubscriptionExisted but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(2)?(), MqttImplementationSpecificError()) else h.fail("Expect 3rd reason-code to be MqttImplementationSpecificError but got None") end
+        try h.assert_eq[U8 val]((pkt.reason_codes as Array[MqttUnsubAckReasonCode val] val)(3)?(), MqttUnspecifiedError()) else h.fail("Expect 4th reason-code to be MqttUnspecifiedError but got None") end
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 1) else h.fail("Expect 1 item in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
