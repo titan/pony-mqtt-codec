@@ -85,13 +85,13 @@ primitive MqttPubRelDecoder
           reason_string,
           consume user_properties
         )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     else
       let packet =
         MqttPubRelPacket(
           packet_identifier
         )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     end
 
 primitive MqttPubRelMeasurer

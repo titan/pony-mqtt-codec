@@ -330,8 +330,6 @@ primitive MqttConnAckDecoder
           (let authentication_data', let consumed) = MqttAuthenticationData.decode(reader) ?
           authentication_data = authentication_data'
           decoded_length = decoded_length + consumed
-        else
-          return (MqttDecodeError, "Invalid property " + identifier.string() + " in CONNACK packet")
         end
       end
       let packet = MqttConnAckPacket(
@@ -356,7 +354,7 @@ primitive MqttConnAckDecoder
         authentication_method,
         authentication_data
       )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     else
       var return_code: MqttConnectReturnCode =
         match reader.u8() ?
@@ -374,7 +372,7 @@ primitive MqttConnAckDecoder
         None,
         return_code
       )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     end
 
 primitive MqttConnAckMeasurer

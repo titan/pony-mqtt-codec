@@ -21,7 +21,7 @@ class _TestConnAck is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf, MqttVersion311) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttConnAckPacket val =>
         h.assert_eq[Bool val](pkt.session_present, true)
@@ -41,7 +41,7 @@ class _TestConnAck is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttConnAckPacket val =>
         h.assert_eq[Bool val](pkt.session_present, true)
@@ -79,7 +79,7 @@ class _TestConnAck is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttConnAckPacket val =>
         h.assert_eq[Bool val](pkt.session_present, true)

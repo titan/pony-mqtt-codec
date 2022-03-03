@@ -25,7 +25,7 @@ class _TestConnect is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttConnectPacket val =>
         h.assert_eq[U16 val](pkt.keep_alive, 300)
@@ -84,7 +84,7 @@ class _TestConnect is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttConnectPacket val =>
         h.assert_eq[U16 val](pkt.keep_alive, 300)

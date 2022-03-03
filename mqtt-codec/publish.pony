@@ -276,7 +276,7 @@ primitive MqttPublishDecoder
           content_type,
           consume payload
         )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     else
       let payload_length = remaining - consumed
       if payload_length > 0 then
@@ -292,7 +292,7 @@ primitive MqttPublishDecoder
           where
           payload' = consume payload
         )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     end
 
 primitive MqttPublishMeasurer

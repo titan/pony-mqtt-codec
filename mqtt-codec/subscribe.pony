@@ -195,14 +195,14 @@ primitive MqttSubscribeDecoder
           subscription_identifier,
           consume user_properties
         )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     else
       let packet =
         MqttSubscribePacket(
           packet_identifier,
           consume topic_subscriptions
         )
-      (MqttDecodeDone, packet)
+      (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     end
 
 primitive MqttSubscribeMeasurer

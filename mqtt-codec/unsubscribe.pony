@@ -74,7 +74,7 @@ primitive MqttUnsubscribeDecoder
         consume topic_filters,
         consume user_properties
       )
-    (MqttDecodeDone, packet)
+    (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttUnsubscribeMeasurer
   fun variable_header_size(data: MqttUnsubscribePacket box, version: MqttVersion box = MqttVersion5): USize val =>

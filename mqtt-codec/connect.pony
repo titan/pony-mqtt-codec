@@ -531,7 +531,7 @@ primitive MqttConnectDecoder
         user_name,
         password
       )
-    (MqttDecodeDone, packet)
+    (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttConnectMeasurer
   fun variable_header_size(data: MqttConnectPacket box, version: MqttVersion box): USize val =>

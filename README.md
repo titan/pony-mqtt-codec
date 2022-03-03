@@ -6,7 +6,7 @@ Pony implementation of encoders and decoders following the MQTT protocol specifi
 
 1. Install [corral](https://github.com/ponylang/corral)
 
-2. `corral add github.com/titan/pony-mqtt-codec.git`
+2. `corral add -r master github.com/titan/pony-mqtt-codec.git`
 
 3. `corral fetch` to fetch your dependencies
 

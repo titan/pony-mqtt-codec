@@ -105,7 +105,7 @@ class MqttAuthDecoder
         reason_string,
         consume user_properties
       )
-    (MqttDecodeDone, packet)
+    (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttAuthMeasurer
   fun variable_header_size(data: MqttAuthPacket box, maximum_packet_size: (USize box | None) = None): USize val =>

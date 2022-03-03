@@ -6,7 +6,7 @@ primitive MqttDecodeContinue
 
 primitive MqttDecodeError
 
-type MqttDecodeResultType[A] is ((MqttDecodeDone, A) | (MqttDecodeContinue, Array[U8] val) | (MqttDecodeError, String val))
+type MqttDecodeResultType[A] is ((MqttDecodeDone, A, (Array[U8] val | None)) | (MqttDecodeContinue, Array[U8] val) | (MqttDecodeError, String val))
 
 primitive MqttDecoder
   fun apply(data: Array[U8] val, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttControlPacketType val] val ? =>
@@ -43,9 +43,9 @@ primitive MqttDecoder
     | MqttUnsubAck() =>
       MqttUnsubAckDecoder(consume reader, header, remaining', version) ?
     | MqttPingReq() =>
-      (MqttDecodeDone, MqttPingReqPacket)
+      (MqttDecodeDone, MqttPingReqPacket, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     | MqttPingResp() =>
-      (MqttDecodeDone, MqttPingRespPacket)
+      (MqttDecodeDone, MqttPingRespPacket, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
     | MqttDisconnect() =>
       MqttDisconnectDecoder(consume reader, header, remaining', version) ?
     | MqttAuth() =>

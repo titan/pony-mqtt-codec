@@ -107,7 +107,7 @@ primitive MqttUnsubAckDecoder
         reason_string,
         consume user_properties
       )
-    (MqttDecodeDone, packet)
+    (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttUnsubAckMeasurer
   fun variable_header_size(data: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>

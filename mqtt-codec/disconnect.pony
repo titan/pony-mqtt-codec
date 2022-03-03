@@ -136,7 +136,7 @@ class MqttDisconnectDecoder
         consume user_properties,
         server_reference
       )
-    (MqttDecodeDone, packet)
+    (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttDisconnectMeasurer
   fun variable_header_size(data: MqttDisconnectPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>

@@ -17,7 +17,7 @@ class _TestAuth is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttAuthPacket val =>
         try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode val)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
@@ -43,7 +43,7 @@ class _TestAuth is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttAuthPacket val =>
         try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
@@ -72,7 +72,7 @@ class _TestAuth is UnitTest
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val) =>
+    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttAuthPacket val =>
         try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
