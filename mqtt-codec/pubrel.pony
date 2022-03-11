@@ -170,7 +170,7 @@ primitive MqttPubRelEncoder
     var buf' = recover iso Array[U8](total_size) end
     var buf: Array[U8] trn^ = consume buf'
 
-    buf.push(MqttPubRel() and 0xF0)
+    buf.push((MqttPubRel() and 0xF0) or 0x02)
     MqttVariableByteInteger.encode(buf, remaining.ulong())
     MqttTwoByteInteger.encode(buf, data.packet_identifier)
 
