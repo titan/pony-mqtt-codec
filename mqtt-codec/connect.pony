@@ -138,6 +138,16 @@ class MqttWillProperties
     user_properties = user_properties'
 
 class MqttConnectPacket
+  let protocol_name: String val
+  """
+  A Server which support multiple protocols uses the Protocol Name to determine
+  whether the data is MQTT.
+
+  * mqtt-3
+  * mqtt-3.1.1
+  * mqtt-3.1
+  """
+
   let protocol_version: MqttVersion val
   """
   This represents the revision level of the protocol used by the Client.
@@ -316,6 +326,7 @@ class MqttConnectPacket
   """
 
   new iso create(
+    protocol_name': String val,
     protocol_version': MqttVersion val = MqttVersion5,
     clean_start': Bool val = false,
     will_qos': MqttQoS val = MqttQoS0,
@@ -337,6 +348,7 @@ class MqttConnectPacket
     user_name': (String val | None) = None,
     password': (Array[U8 val] val | None) = None
   ) =>
+    protocol_name = protocol_name'
     protocol_version = protocol_version'
     clean_start = clean_start'
     will_qos = will_qos'
@@ -360,7 +372,7 @@ class MqttConnectPacket
 
 primitive MqttConnectDecoder
   fun apply(reader: Reader, header: U8 box, remaining: USize box): MqttDecodeResultType[MqttConnectPacket val] val ? =>
-    (let protocol, _) = MqttUtf8String.decode(reader) ?
+    (let protocol_name, _) = MqttUtf8String.decode(reader) ?
     let protocol_version =
       match reader.u8() ?
       | MqttVersion311() => MqttVersion311
@@ -510,6 +522,7 @@ primitive MqttConnectDecoder
     end
     let packet =
       MqttConnectPacket(
+        protocol_name,
         protocol_version,
         clean_start,
         will_qos,

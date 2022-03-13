@@ -13,6 +13,7 @@ class _TestConnect is UnitTest
     let origin =
       MqttConnectPacket(
         where
+        protocol_name' = "MQTT",
         keep_alive' = 300,
         client_identifier' = "client-id",
         user_name' = "user-name",
@@ -62,6 +63,7 @@ class _TestConnect is UnitTest
     let origin: MqttConnectPacket iso =
       MqttConnectPacket(
         where
+        protocol_name' = "MQTT",
         keep_alive' = 300,
         client_identifier' = "client-id",
         user_name' = "user-name",
