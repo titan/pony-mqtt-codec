@@ -27,7 +27,7 @@ class _TestDisconnect is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -53,7 +53,7 @@ class _TestDisconnect is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -78,7 +78,7 @@ class _TestDisconnect is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -102,7 +102,7 @@ class _TestDisconnect is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 

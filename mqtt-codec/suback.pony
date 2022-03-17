@@ -191,8 +191,7 @@ primitive MqttSubAckEncoder
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1
 
-    var buf' = recover iso Array[U8](total_size) end
-    var buf: Array[U8] trn^ = consume buf'
+    var buf = Array[U8](total_size)
 
     buf.push(MqttSubAck() and 0xF0)
     MqttVariableByteInteger.encode(buf, remaining.ulong())
@@ -225,4 +224,4 @@ primitive MqttSubAckEncoder
       buf.push(item())
     end
 
-    buf
+    U8ArrayClone(buf)

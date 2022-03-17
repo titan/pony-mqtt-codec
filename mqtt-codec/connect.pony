@@ -777,8 +777,7 @@ primitive MqttConnectEncoder
         end
       end
 
-    var buf' = recover iso Array[U8](1 + MqttVariableByteInteger.size(size) + size.usize()) end
-    var buf: Array[U8] trn^ = consume buf'
+    var buf = Array[U8](1 + MqttVariableByteInteger.size(size) + size.usize())
 
     buf.push(MqttConnect() and 0xF0)
     MqttVariableByteInteger.encode(buf, size)
@@ -903,4 +902,4 @@ primitive MqttConnectEncoder
       MqttBinaryData.encode(buf, password)
     end
 
-    buf
+    U8ArrayClone(buf)

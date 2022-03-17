@@ -109,8 +109,7 @@ primitive MqttUnsubscribeEncoder
   fun apply(data: MqttUnsubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
     let size = (MqttUnsubscribeMeasurer.variable_header_size(data, version) + MqttUnsubscribeMeasurer.payload_size(data)).ulong()
 
-    var buf' = recover iso Array[U8 val](MqttVariableByteInteger.size(size) + size.usize() + 1) end
-    var buf: Array[U8 val] trn^ = consume buf'
+    var buf = Array[U8 val](MqttVariableByteInteger.size(size) + size.usize() + 1)
 
     buf.push(MqttUnsubscribe() or 0x02)
 
@@ -133,4 +132,4 @@ primitive MqttUnsubscribeEncoder
       MqttUtf8String.encode(buf, item)
     end
 
-    consume buf
+    U8ArrayClone(buf)

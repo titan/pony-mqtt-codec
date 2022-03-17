@@ -37,7 +37,7 @@ class _TestUnsubscribe is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded UNSUBSCRIBE packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -76,6 +76,6 @@ class _TestUnsubscribe is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded UNSUBSCRIBE packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end

@@ -25,7 +25,7 @@ primitive MqttDoNotSendAtSubscribe
 
 type MqttRetainHandling is (MqttSendAtSubscribe | MqttSendAtSubscribeIfNotExist | MqttDoNotSendAtSubscribe)
 
-class MqttTopicSubscription
+class MqttSubscription
   let topic_filter: String val
   """
   It indicates the Topics to which the Client wants to subscribe
@@ -113,7 +113,7 @@ class MqttSubscribePacket
   * mqtt-5
   """
 
-  let topic_subscriptions: Array[MqttTopicSubscription val] val
+  let subscriptions: Array[MqttSubscription val] val
   """
   This indicates the Topics to which the Client wants to subscribe.
 
@@ -124,12 +124,12 @@ class MqttSubscribePacket
 
   new iso create(
       packet_identifier': U16 val,
-      topic_subscriptions': Array[MqttTopicSubscription val] val,
+      subscriptions': Array[MqttSubscription val] val,
       subscription_identifier': (ULong val | None) = None,
       user_properties': (Map[String val, String val] val | None) = None
   ) =>
       packet_identifier = packet_identifier'
-      topic_subscriptions = topic_subscriptions'
+      subscriptions = subscriptions'
       subscription_identifier = subscription_identifier'
       user_properties = user_properties'
 
@@ -180,20 +180,20 @@ primitive MqttSubscribeDecoder
     end
     consumed = consumed + property_length
 
-    var topic_subscriptions: Array[MqttTopicSubscription val] iso = recover iso Array[MqttTopicSubscription val] end
+    var subscriptions: Array[MqttSubscription val] iso = recover iso Array[MqttSubscription val] end
     while consumed < remaining do
       (let topic_filter: String, let consumed4) = MqttUtf8String.decode(reader) ?
       consumed = consumed + consumed4
       let option = reader.u8() ?
       consumed = consumed + 1
       let qos_level = _MqttQoSDecoder(option << 1)
-      topic_subscriptions.push(MqttTopicSubscription(topic_filter, qos_level))
+      subscriptions.push(MqttSubscription(topic_filter, qos_level))
     end
 
     let packet =
       MqttSubscribePacket(
         packet_identifier,
-        consume topic_subscriptions,
+        consume subscriptions,
         subscription_identifier,
         consume user_properties
       )
@@ -209,20 +209,20 @@ primitive MqttSubscribeDecoder
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
     consumed = consumed + consumed1
     var subscription_identifier: (ULong | None) = None
-    var topic_subscriptions: Array[MqttTopicSubscription val] iso = recover iso Array[MqttTopicSubscription val] end
+    var subscriptions: Array[MqttSubscription val] iso = recover iso Array[MqttSubscription val] end
     while consumed < remaining do
       (let topic_filter: String, let consumed4) = MqttUtf8String.decode(reader) ?
       consumed = consumed + consumed4
       let option = reader.u8() ?
       consumed = consumed + 1
       let qos_level = _MqttQoSDecoder(option << 1)
-      topic_subscriptions.push(MqttTopicSubscription(topic_filter, qos_level))
+      subscriptions.push(MqttSubscription(topic_filter, qos_level))
     end
 
     let packet =
       MqttSubscribePacket(
         packet_identifier,
-        consume topic_subscriptions
+        consume subscriptions
       )
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
@@ -257,14 +257,14 @@ primitive MqttSubscribeMeasurer
 
   fun payload_size(data: MqttSubscribePacket box): USize val =>
     var size: USize = 0
-    for topic_subscription in data.topic_subscriptions.values() do
-      size = size + MqttUtf8String.size(topic_subscription.topic_filter)
+    for subscription in data.subscriptions.values() do
+      size = size + MqttUtf8String.size(subscription.topic_filter)
       size = size + 1 // option
     end
     size
 
-primitive MqttTopicSubscriptionEncoder
-  fun apply(buf: Array[U8], data: MqttTopicSubscription box, version: MqttVersion box = MqttVersion5): USize val =>
+primitive MqttSubscriptionEncoder
+  fun apply(buf: Array[U8], data: MqttSubscription box, version: MqttVersion box = MqttVersion5): USize val =>
     var cnt: USize = MqttUtf8String.encode(buf, data.topic_filter)
     let option: U8 =
       if \likely\ version() == MqttVersion5() then
@@ -280,8 +280,7 @@ primitive MqttSubscribeEncoder
   fun apply(data: MqttSubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8] val =>
     let size = (MqttSubscribeMeasurer.variable_header_size(data, version) + MqttSubscribeMeasurer.payload_size(data)).ulong()
 
-    var buf' = recover iso Array[U8](MqttVariableByteInteger.size(size) + size.usize() + 1) end
-    var buf: Array[U8] trn^ = consume buf'
+    var buf = Array[U8](MqttVariableByteInteger.size(size) + size.usize() + 1)
 
     buf.push((MqttSubscribe() and 0xF2) or 0x02)
     MqttVariableByteInteger.encode(buf, size)
@@ -304,8 +303,8 @@ primitive MqttSubscribeEncoder
       end
     end
 
-    for item in data.topic_subscriptions.values() do
-      MqttTopicSubscriptionEncoder(buf, item, version)
+    for item in data.subscriptions.values() do
+      MqttSubscriptionEncoder(buf, item, version)
     end
 
-    buf
+    U8ArrayClone(buf)

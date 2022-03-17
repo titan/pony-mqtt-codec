@@ -32,7 +32,7 @@ class _TestAuth is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -57,7 +57,7 @@ class _TestAuth is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -81,7 +81,7 @@ class _TestAuth is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 

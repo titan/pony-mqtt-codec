@@ -387,8 +387,7 @@ primitive MqttPublishEncoder
   fun apply(data: MqttPublishPacket box, version: MqttVersion box = MqttVersion5): Array[U8] val =>
     let remaining = (MqttPublishMeasurer.variable_header_size(data, version) + MqttPublishMeasurer.payload_size(data)).ulong()
 
-    var buf' = recover iso Array[U8](MqttVariableByteInteger.size(remaining) + remaining.usize() + 1) end
-    var buf: Array[U8] trn^ = consume buf'
+    var buf = Array[U8](MqttVariableByteInteger.size(remaining) + remaining.usize() + 1)
 
     buf.push(MqttPublish() or (_MqttDup.encode(data.dup_flag) or (_MqttQoSEncoder(data.qos_level) or (_MqttRetain.encode(data.retain)))))
     MqttVariableByteInteger.encode(buf, remaining)
@@ -457,4 +456,4 @@ primitive MqttPublishEncoder
       buf.copy_from(payload, 0, buf.size(), payload.size())
     end
 
-    buf
+    U8ArrayClone(buf)

@@ -10,13 +10,12 @@ class _TestUtf8String is UnitTest
     _test_string(h, "hello world") ?
 
   fun _test_string(h: TestHelper, str: String) ? =>
-    let buf = recover trn Array[U8](MqttUtf8String.size(str)) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttUtf8String.encode(buf', str)
-    let reader = Reader
-    let reader': Reader ref^ = consume reader
-    reader'.append(buf')
-    (let result, _) = MqttUtf8String.decode(reader') ?
+    let buf: Array[U8 val] = Array[U8 val](MqttUtf8String.size(str))
+    MqttUtf8String.encode(buf, str)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    let reader: Reader ref = Reader
+    reader.append(buf')
+    (let result, _) = MqttUtf8String.decode(reader) ?
     h.assert_eq[String](result, str)
 
 class _TestUtf8StringPair is UnitTest
@@ -29,13 +28,12 @@ class _TestUtf8StringPair is UnitTest
     _test_string_pair(h, ("hello", "world")) ?
 
   fun _test_string_pair(h: TestHelper, pair: (String, String)) ? =>
-    let buf = recover trn Array[U8](MqttUtf8StringPair.size(pair)) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttUtf8StringPair.encode(buf', pair)
-    let reader = Reader
-    let reader': Reader ref^ = consume reader
-    reader'.append(buf')
-    (let result, _) = MqttUtf8StringPair.decode(reader') ?
+    let buf: Array[U8 val] = Array[U8 val](MqttUtf8StringPair.size(pair))
+    MqttUtf8StringPair.encode(buf, pair)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    let reader: Reader ref = Reader
+    reader.append(buf')
+    (let result, _) = MqttUtf8StringPair.decode(reader) ?
     h.assert_eq[String](result._1, pair._1)
     h.assert_eq[String](result._2, pair._2)
 
@@ -48,13 +46,12 @@ class _TestTwoByteInteger is UnitTest
     _test_two_byte_integer(h, 65_535) ?
 
   fun _test_two_byte_integer(h: TestHelper, data: U16) ? =>
-    let buf = recover trn Array[U8](MqttTwoByteInteger.size(data)) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttTwoByteInteger.encode(buf', data)
-    let reader = Reader
-    let reader': Reader ref^ = consume reader
-    reader'.append(buf')
-    (let result, _) = MqttTwoByteInteger.decode(reader') ?
+    let buf: Array[U8 val] = Array[U8 val](MqttTwoByteInteger.size(data))
+    MqttTwoByteInteger.encode(buf, data)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    let reader: Reader ref = Reader
+    reader.append(buf')
+    (let result, _) = MqttTwoByteInteger.decode(reader) ?
     h.assert_eq[U16](result, data)
 
 class _TestFourByteInteger is UnitTest
@@ -67,13 +64,12 @@ class _TestFourByteInteger is UnitTest
     _test_four_byte_integer(h, 16_777_215) ?
 
   fun _test_four_byte_integer(h: TestHelper, data: U32) ? =>
-    let buf = recover trn Array[U8](MqttFourByteInteger.size(data)) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttFourByteInteger.encode(buf', data)
-    let reader = Reader
-    let reader': Reader ref^ = consume reader
-    reader'.append(buf')
-    (let result, _) = MqttFourByteInteger.decode(reader') ?
+    let buf: Array[U8 val] = Array[U8 val](MqttFourByteInteger.size(data))
+    MqttFourByteInteger.encode(buf, data)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    let reader: Reader ref = Reader
+    reader.append(consume buf')
+    (let result, _) = MqttFourByteInteger.decode(reader) ?
     h.assert_eq[U32](result, data)
 
 class _TestVariableByteInteger is UnitTest
@@ -92,20 +88,19 @@ class _TestVariableByteInteger is UnitTest
     _test_direct(h, [10; 0x39; 0; 4], 1, 0x39) ?
 
   fun _test_array(h: TestHelper, data: ULong) ? =>
-    let buf = recover trn Array[U8](MqttVariableByteInteger.size(data)) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttVariableByteInteger.encode(buf', data)
-    (let result, _) = MqttVariableByteInteger.decode_array(buf', 0) ?
+    let buf: Array[U8 val] = Array[U8 val](MqttVariableByteInteger.size(data))
+    MqttVariableByteInteger.encode(buf, data)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    (let result, _) = MqttVariableByteInteger.decode_array(consume buf', 0) ?
     h.assert_eq[ULong](result, data)
 
   fun _test_reader(h: TestHelper, data: ULong) ? =>
-    let buf = recover trn Array[U8](MqttVariableByteInteger.size(data)) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttVariableByteInteger.encode(buf', data)
-    let reader = Reader
-    let reader': Reader ref^ = consume reader
-    reader'.append(buf')
-    (let result, _) = MqttVariableByteInteger.decode_reader(reader') ?
+    let buf: Array[U8 val] = Array[U8 val](MqttVariableByteInteger.size(data))
+    MqttVariableByteInteger.encode(buf, data)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    let reader: Reader ref = Reader
+    reader.append(consume buf')
+    (let result, _) = MqttVariableByteInteger.decode_reader(reader) ?
     h.assert_eq[ULong](result, data)
 
   fun _test_direct(h: TestHelper, buf: Array[U8] val, offset: USize, expected: ULong) ? =>
@@ -121,11 +116,10 @@ class _TestBinaryData is UnitTest
 
   fun _test_binary_data(h: TestHelper, data: Array[U8] box) ? =>
     let len = MqttBinaryData.size(data)
-    let buf = recover trn Array[U8](len) end
-    let buf': Array[U8] trn^ = consume buf
-    MqttBinaryData.encode(buf', data)
-    let reader = Reader
-    let reader': Reader ref^ = consume reader
-    reader'.append(buf')
-    (let result, _) = MqttBinaryData.decode(reader') ?
-    h.assert_array_eq[U8](result, data)
+    let buf: Array[U8 val] = Array[U8 val](len)
+    MqttBinaryData.encode(buf, data)
+    let buf': Array[U8 val] val = U8ArrayClone(buf)
+    let reader: Reader ref = Reader
+    reader.append(consume buf')
+    (let result, _) = MqttBinaryData.decode(reader) ?
+    h.assert_array_eq[U8 val](result, data)

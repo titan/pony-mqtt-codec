@@ -39,7 +39,7 @@ class _TestPublish is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBLISH packet is not completed")
-    | (MqttDecodeError, let err: String) =>
+    | (MqttDecodeError, let err: String, _) =>
       h.fail(err)
     end
 
@@ -92,6 +92,6 @@ class _TestPublish is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBLISH packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end

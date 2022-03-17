@@ -167,8 +167,7 @@ primitive MqttPubRelEncoder
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1
 
-    var buf' = recover iso Array[U8](total_size) end
-    var buf: Array[U8] trn^ = consume buf'
+    var buf = Array[U8](total_size)
 
     buf.push((MqttPubRel() and 0xF0) or 0x02)
     MqttVariableByteInteger.encode(buf, remaining.ulong())
@@ -201,4 +200,4 @@ primitive MqttPubRelEncoder
       end
     end
 
-    buf
+    U8ArrayClone(buf)

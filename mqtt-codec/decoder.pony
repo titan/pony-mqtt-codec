@@ -6,10 +6,10 @@ primitive MqttDecodeContinue
 
 primitive MqttDecodeError
 
-type MqttDecodeResultType[A] is ((MqttDecodeDone, A, (Array[U8] val | None)) | (MqttDecodeContinue, Array[U8] val) | (MqttDecodeError, String val))
+type MqttDecodeResultType[A] is ((MqttDecodeDone, A, (Array[U8 val] val | None)) | (MqttDecodeContinue, Array[U8 val] val) | (MqttDecodeError, String val, Array[U8 val] val))
 
 primitive MqttDecoder
-  fun apply(data: Array[U8] val, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttControlPacketType val] val ? =>
+  fun apply(data: Array[U8 val] val, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttControlPacketType val] val ? =>
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(data, 1) ? else (0, 0) end
     let remaining': USize = remaining.usize()
     if remaining' > ((data.size() - 1) - remainlen) then
@@ -51,5 +51,5 @@ primitive MqttDecoder
     | MqttAuth() =>
       MqttAuthDecoder(consume reader, header, remaining') ?
     else
-      (MqttDecodeError, "Unknown control packet type: " + (header and 0xF0).string())
+      (MqttDecodeError, "Unknown control packet type: " + (header and 0xF0).string(), reader.block(reader.size()) ?)
     end

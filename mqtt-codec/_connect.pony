@@ -40,7 +40,7 @@ class _TestConnect is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNECT packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -139,6 +139,6 @@ class _TestConnect is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNECT packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end

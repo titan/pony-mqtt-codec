@@ -42,7 +42,7 @@ class _TestSubAck is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded SUBACK packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -71,7 +71,7 @@ class _TestSubAck is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded SUBACK packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 
@@ -99,7 +99,7 @@ class _TestSubAck is UnitTest
       end
     | (MqttDecodeContinue, _) =>
       h.fail("Encoded SUBACK packet is not completed")
-    | (MqttDecodeError, let err: String val) =>
+    | (MqttDecodeError, let err: String val, _) =>
       h.fail(err)
     end
 

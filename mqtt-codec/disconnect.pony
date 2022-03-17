@@ -242,8 +242,7 @@ primitive MqttDisconnectEncoder
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1
 
-    var buf' = recover iso Array[U8 val](total_size) end
-    var buf: Array[U8 val] trn^ = consume buf'
+    var buf = Array[U8 val](total_size)
 
     buf.push(MqttDisconnect() and 0xF0)
     MqttVariableByteInteger.encode(buf, remaining.ulong())
@@ -254,7 +253,7 @@ primitive MqttDisconnectEncoder
       match data.reason_code
       | MqttNormalDisconnection =>
         if properties_length == 0 then
-          return buf
+          return U8ArrayClone(buf)
         end
         buf.push(MqttNormalDisconnection())
       | let reason_code: MqttDisconnectReasonCode =>
@@ -292,4 +291,4 @@ primitive MqttDisconnectEncoder
       end
     end
 
-    buf
+    U8ArrayClone(buf)
