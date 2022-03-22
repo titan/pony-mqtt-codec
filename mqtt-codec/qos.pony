@@ -29,11 +29,15 @@ primitive MqttQoSReserved
 type MqttQoS is (MqttQoS0 | MqttQoS1 | MqttQoS2 | MqttQoSReserved)
 
 primitive _MqttQoSEncoder
-  fun apply(qos: MqttQoS box): U8 val =>
+  fun apply(
+    qos: MqttQoS box)
+  : U8 val =>
     qos()
 
 primitive _MqttQoSDecoder
-  fun apply(data: U8 box): MqttQoS val =>
+  fun apply(
+    data: U8 box)
+  : MqttQoS val =>
     match (data and 0x06)
     | MqttQoS0() => MqttQoS0
     | MqttQoS1() => MqttQoS1

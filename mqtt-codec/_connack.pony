@@ -17,7 +17,7 @@ class _TestConnAck is UnitTest
       return_code' = MqttConnectionAccepted
     )
 
-    let buf = MqttConnAck.encode(consume origin, None, MqttVersion311)
+    let buf = MqttConnAck.encode(consume origin, 0, MqttVersion311)
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf, MqttVersion311) ?
@@ -46,20 +46,20 @@ class _TestConnAck is UnitTest
       | let pkt: MqttConnAckPacket val =>
         h.assert_eq[Bool val](pkt.session_present, true)
         try h.assert_eq[U8 val]((pkt.reason_code as MqttConnectReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be 0 but got None") end
-        try h.assert_eq[U32 val](pkt.session_expiry_interval as U32, 10) else h.fail("Expect session_expiry_interval to be 10 but got None") end
-        try h.assert_eq[U16 val](pkt.receive_maximum as U16, 65535) else h.fail("Expect receive-maximum to be 65535 but got None") end
-        try h.assert_eq[Bool val](pkt.maximum_qos as Bool, true) else h.fail("Expect maximum-qos to be true") end
-        try h.assert_eq[U32 val](pkt.maximum_packet_size as U32, 65535) else h.fail("Expect maximum-packet-size to be 65535 but got None") end
+        h.assert_eq[U32 val](pkt.session_expiry_interval, 10)
+        h.assert_eq[U16 val](pkt.receive_maximum, 65535)
+        h.assert_eq[Bool val](pkt.maximum_qos, true)
+        h.assert_eq[U32 val](pkt.maximum_packet_size, 65535)
         try h.assert_eq[String val](pkt.assigned_client_identifier as String, "identifier") else h.fail("Expect assigned-client-identifier to be identifier but got None") end
-        try h.assert_eq[U16 val](pkt.topic_alias_maximum as U16, 65535) else h.fail("Expect topic-alias-maximum to be 65535 but got None") end
+        h.assert_eq[U16 val](pkt.topic_alias_maximum, 65535)
         try h.assert_eq[String val](pkt.reason_string as String, "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("hello")?, "world") else h.fail("Expect hello in user-properties to be world") end
-        try h.assert_eq[Bool val](pkt.wildcard_subscription_available as Bool, true) else h.fail("Expect wildcard-subscription-available to be true") end
-        try h.assert_eq[Bool val](pkt.subscription_identifier_available as Bool, true) else h.fail("Expect subscription-identifier-available to be true") end
-        try h.assert_eq[Bool val](pkt.shared_subscription_available as Bool, true) else h.fail("Expect shared-subscription-available to be true") end
-        try h.assert_eq[U16 val](pkt.server_keep_alive as U16, 65535) else h.fail("Expect server-keep-alive to be 65535 but got None") end
+        h.assert_eq[Bool val](pkt.wildcard_subscription_available, true)
+        h.assert_eq[Bool val](pkt.subscription_identifier_available, true)
+        h.assert_eq[Bool val](pkt.shared_subscription_available, true)
+        h.assert_eq[U16 val](pkt.server_keep_alive, 65535)
         try h.assert_eq[String val](pkt.server_reference as String, "server-reference") else h.fail("Expect server-reference to be server-reference but got None") end
         try h.assert_eq[String val](pkt.authentication_method as String, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
         try h.assert_array_eq[U8 val](pkt.authentication_data as Array[U8 val] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
@@ -84,18 +84,18 @@ class _TestConnAck is UnitTest
       | let pkt: MqttConnAckPacket val =>
         h.assert_eq[Bool val](pkt.session_present, true)
         try h.assert_eq[U8 val]((pkt.reason_code as MqttConnectReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be 0 but got None") end
-        try h.assert_eq[U32 val](pkt.session_expiry_interval as U32 val, 10) else h.fail("Expect session_expiry_interval to be 10 but got None") end
-        try h.assert_eq[U16 val](pkt.receive_maximum as U16 val, 65535) else h.fail("Expect receive-maximum to be 65535 but got None") end
-        try h.assert_eq[Bool val](pkt.maximum_qos as Bool val, true) else h.fail("Expect maximum-qos to be true") end
-        try h.assert_eq[U32 val](pkt.maximum_packet_size as U32 val, 65535) else h.fail("Expect maximum-packet-size to be 65535 but got None") end
+        h.assert_eq[U32 val](pkt.session_expiry_interval, 10)
+        h.assert_eq[U16 val](pkt.receive_maximum, 65535)
+        h.assert_eq[Bool val](pkt.maximum_qos, true)
+        h.assert_eq[U32 val](pkt.maximum_packet_size, 65535)
         try h.assert_eq[String val](pkt.assigned_client_identifier as String val, "identifier") else h.fail("Expect assigned-client-identifier to be identifier but got None") end
-        try h.assert_eq[U16 val](pkt.topic_alias_maximum as U16 val, 65535) else h.fail("Expect topic-alias-maximum to be 65535 but got None") end
+        h.assert_eq[U16 val](pkt.topic_alias_maximum, 65535)
         try h.assert_eq[String val](pkt.reason_string as String val, "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 1) else h.fail("Expect 1 items in user-properties") end
-        try h.assert_eq[Bool val](pkt.wildcard_subscription_available as Bool val, true) else h.fail("Expect wildcard-subscription-available to be true") end
-        try h.assert_eq[Bool val](pkt.subscription_identifier_available as Bool val, true) else h.fail("Expect subscription-identifier-available to be true") end
-        try h.assert_eq[Bool val](pkt.shared_subscription_available as Bool val, true) else h.fail("Expect shared-subscription-available to be true") end
-        try h.assert_eq[U16 val](pkt.server_keep_alive as U16 val, 65535) else h.fail("Expect server-keep-alive to be 65535 but got None") end
+        h.assert_eq[Bool val](pkt.wildcard_subscription_available, true)
+        h.assert_eq[Bool val](pkt.subscription_identifier_available, true)
+        h.assert_eq[Bool val](pkt.shared_subscription_available, true)
+        h.assert_eq[U16 val](pkt.server_keep_alive, 65535)
         try h.assert_eq[String val](pkt.server_reference as String val, "server-reference") else h.fail("Expect server-reference to be server-reference but got None") end
         try h.assert_eq[String val](pkt.authentication_method as String val, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
         try h.assert_array_eq[U8 val](pkt.authentication_data as Array[U8 val] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end

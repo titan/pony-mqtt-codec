@@ -24,7 +24,7 @@ class _TestSubAck is UnitTest
         reason_codes' = reason_codes
       )
 
-    let buf = MqttSubAck.encode(consume origin, None, MqttVersion311)
+    let buf = MqttSubAck.encode(consume origin, 0, MqttVersion311)
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf, MqttVersion311) ?

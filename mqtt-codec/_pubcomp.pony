@@ -17,7 +17,7 @@ class _TestPubComp is UnitTest
         packet_identifier' = 65535
       )
 
-    let buf = MqttPubComp.encode(consume origin, None, MqttVersion311)
+    let buf = MqttPubComp.encode(consume origin, 0, MqttVersion311)
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf, MqttVersion311) ?
@@ -45,7 +45,7 @@ class _TestPubComp is UnitTest
       match packet
       | let pkt: MqttPubCompPacket val =>
         h.assert_eq[U16 val](pkt.packet_identifier, 65535)
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttPubCompReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttSuccess())
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
@@ -70,7 +70,7 @@ class _TestPubComp is UnitTest
       match packet
       | let pkt: MqttPubCompPacket val =>
         h.assert_eq[U16 val](pkt.packet_identifier, 65535)
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttPubCompReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttSuccess())
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 1) else h.fail("Expect 1 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end

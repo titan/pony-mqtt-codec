@@ -14,7 +14,7 @@ class _TestDisconnect is UnitTest
   fun _test_mqtt311(h: TestHelper) ? =>
     let origin = MqttDisconnectPacket()
 
-    let buf = MqttDisconnect.encode(consume origin, None, MqttVersion311)
+    let buf = MqttDisconnect.encode(consume origin, 0, MqttVersion311)
     (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(buf, MqttVersion311) ?
@@ -41,8 +41,8 @@ class _TestDisconnect is UnitTest
     | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttDisconnectPacket val =>
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttDisconnectReasonCode)(), MqttNormalDisconnection()) else h.fail("Expect reason-code to be MqttNormalDisconnection but got None") end
-        try h.assert_eq[U32 val]((pkt.session_expiry_interval as U32 val), 65535) else h.fail("Expect session-expiry-interval to be 65535 but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttNormalDisconnection())
+        h.assert_eq[U32 val](pkt.session_expiry_interval, 65535)
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
@@ -67,8 +67,8 @@ class _TestDisconnect is UnitTest
     | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttDisconnectPacket val =>
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttDisconnectReasonCode)(), MqttNormalDisconnection()) else h.fail("Expect reason-code to be MqttNormalDisconnection but got None") end
-        try h.assert_eq[U32 val]((pkt.session_expiry_interval as U32 val), 65535) else h.fail("Expect session-expiry-interval to be 65535 but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttNormalDisconnection())
+        h.assert_eq[U32 val](pkt.session_expiry_interval, 65535)
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 1) else h.fail("Expect 1 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
@@ -96,7 +96,7 @@ class _TestDisconnect is UnitTest
     | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttDisconnectPacket val =>
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttDisconnectReasonCode)(), MqttNormalDisconnection()) else h.fail("Expect reason-code to be MqttNormalDisconnection but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttNormalDisconnection())
       else
         h.fail("Encoded packet is not DISCONNECT")
       end

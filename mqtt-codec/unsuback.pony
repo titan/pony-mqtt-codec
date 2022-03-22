@@ -40,18 +40,23 @@ class MqttUnsubAckPacket
   """
 
   new iso create(
-      packet_identifier': U16 val,
-      reason_codes': (Array[MqttUnsubAckReasonCode val] val | None) = None,
-      reason_string': (String val | None) = None,
-      user_properties': (Map[String val, String val] val | None) = None
-  ) =>
-      packet_identifier = packet_identifier'
-      reason_codes = reason_codes'
-      reason_string = reason_string'
-      user_properties = user_properties'
+    packet_identifier': U16 val,
+    reason_codes': (Array[MqttUnsubAckReasonCode val] val | None) = None,
+    reason_string': (String val | None) = None,
+    user_properties': (Map[String val, String val] val | None) = None)
+  =>
+    packet_identifier = packet_identifier'
+    reason_codes = reason_codes'
+    reason_string = reason_string'
+    user_properties = user_properties'
 
 primitive MqttUnsubAckDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttUnsubAckPacket val] val ? =>
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: box->USize,
+    version: MqttVersion box = MqttVersion5)
+  : MqttDecodeResultType[MqttUnsubAckPacket val] val ? =>
     var consumed: USize = 0
 
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
@@ -109,24 +114,30 @@ primitive MqttUnsubAckDecoder
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttUnsubAckMeasurer
-  fun variable_header_size(data: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>
+  fun variable_header_size(
+    data: MqttUnsubAckPacket box,
+    maximum_packet_size: USize box = 0,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var size: USize = 2 // packet identifier
     let payload_size' = payload_size(data, version)
     if \likely\ version() == MqttVersion5() then
-      let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size - payload_size' else None end)
+      let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size - payload_size' else 0 end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
     size
 
-  fun properties_size(data: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
+  fun properties_size(
+    data: MqttUnsubAckPacket box,
+    maximum_packet_size: USize box = 0)
+  : USize val =>
     var size: USize = 0
 
     match data.reason_string
     | let reason_string': String box =>
       let length = MqttReasonString.size(reason_string')
-      match maximum_packet_size
-      | let maximum_packet_size': USize box =>
-        if maximum_packet_size' >= (size + length) then
+      if maximum_packet_size != 0 then
+        if maximum_packet_size >= (size + length) then
           size = size + length
         end
       else
@@ -136,11 +147,10 @@ primitive MqttUnsubAckMeasurer
 
     match data.user_properties
     | let user_properties: Map[String val, String val] box =>
-      match maximum_packet_size
-      | let maximum_packet_size': USize box =>
+      if maximum_packet_size != 0 then
         for item in user_properties.pairs() do
           let item_size = MqttUserProperty.size(item)
-          if maximum_packet_size' >= (size + item_size) then
+          if maximum_packet_size >= (size + item_size) then
             size = size + item_size
           else
             break
@@ -155,7 +165,10 @@ primitive MqttUnsubAckMeasurer
 
     size
 
-  fun payload_size(data: MqttUnsubAckPacket box, version: MqttVersion box = MqttVersion5): USize val =>
+  fun payload_size(
+    data: MqttUnsubAckPacket box,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var size: USize = 0
     if \likely\ version() == MqttVersion5() then
       match data.reason_codes
@@ -166,14 +179,17 @@ primitive MqttUnsubAckMeasurer
     size
 
 primitive MqttUnsubAckEncoder
-  fun apply(data: MqttUnsubAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
+  fun apply(
+    data: MqttUnsubAckPacket box,
+    maximum_packet_size: USize box = 0,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8 val] val =>
     let payload_size = MqttUnsubAckMeasurer.payload_size(data, version)
 
-    var maximum_size: (USize | None) = None
+    var maximum_size: USize = 0
     var remaining: USize = 0
-    match maximum_packet_size
-    | let maximum_packet_size': USize box =>
-      var maximum: USize = maximum_packet_size' - 1 - 1 - payload_size
+    if maximum_packet_size != 0 then
+      var maximum: USize = maximum_packet_size - 1 - 1 - payload_size
       remaining = MqttUnsubAckMeasurer.variable_header_size(data, maximum, version)
       var remaining_length = MqttVariableByteInteger.size(remaining.ulong())
       maximum = maximum - remaining_length
@@ -188,7 +204,7 @@ primitive MqttUnsubAckEncoder
       until delta == 0 end
       maximum_size = maximum
     else
-      remaining = MqttUnsubAckMeasurer.variable_header_size(data, None, version) + payload_size
+      remaining = MqttUnsubAckMeasurer.variable_header_size(data, 0, version) + payload_size
     end
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1

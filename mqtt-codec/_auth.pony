@@ -20,7 +20,7 @@ class _TestAuth is UnitTest
     | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttAuthPacket val =>
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode val)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttSuccess())
         try h.assert_eq[String val]((pkt.authentication_method as String val), "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
         try h.assert_array_eq[U8 val]((pkt.authentication_data as Array[U8 val] val), [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
@@ -46,7 +46,7 @@ class _TestAuth is UnitTest
     | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttAuthPacket val =>
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttSuccess())
         try h.assert_eq[String val]((pkt.authentication_method as String val), "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
         try h.assert_array_eq[U8 val]((pkt.authentication_data as Array[U8 val] val), [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
         try h.assert_eq[String val]((pkt.reason_string as String val), "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
@@ -75,7 +75,7 @@ class _TestAuth is UnitTest
     | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
       match packet
       | let pkt: MqttAuthPacket val =>
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttAuthReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be MqttSuccess but got None") end
+        h.assert_eq[U8 val](pkt.reason_code(), MqttSuccess())
       else
         h.fail("Encoded packet is not AUTH")
       end

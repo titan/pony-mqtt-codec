@@ -34,7 +34,7 @@ class MqttConnAckPacket
   * mqtt-3.1
   """
 
-  let session_expiry_interval: (U32 val | None)
+  let session_expiry_interval: U32 val
   """
   When the Session expires the Client and Server need not process the deletion
   of state atomically.
@@ -42,7 +42,7 @@ class MqttConnAckPacket
   * mqtt-5
   """
 
-  let receive_maximum: (U16 val | None)
+  let receive_maximum: U16 val
   """
   The Client uses this value to limit the number of QoS 1 and QoS 2
   publications that it is willing to process concurrently.
@@ -50,22 +50,22 @@ class MqttConnAckPacket
   * mqtt-5
   """
 
-  let maximum_qos: (Bool val | None)
+  let maximum_qos: Bool val
   """
   The Server uses this value to specify the highest QoS it supports.
 
   * mqtt-5
   """
 
-  let retain_available: (Bool val | None)
+  let retain_available: Bool val
   """
-  A value of 0 means that retained messages are not supported. A value of 1
-  means retained messages are supported.
+  A value of false means that retained messages are not supported. A value of
+  true means retained messages are supported.
 
   * mqtt-5
   """
 
-  let maximum_packet_size: (U32 val | None)
+  let maximum_packet_size: U32 val
   """
   The Server uses the Maximum Packet Size to inform the Client that it will not
   process packets whose size exceeds this limit.
@@ -81,7 +81,7 @@ class MqttConnAckPacket
   * mqtt-5
   """
 
-  let topic_alias_maximum: (U16 val | None)
+  let topic_alias_maximum: U16 val
   """
   This value indicates the highest value that the Server will accept as a Topic
   Alias sent by the Client. The Server uses this value to limit the number of
@@ -105,28 +105,28 @@ class MqttConnAckPacket
   * mqtt-5
   """
 
-  let wildcard_subscription_available: (Bool val | None)
+  let wildcard_subscription_available: Bool val
   """
   This property declares whether the Server supports Wildcard Subscriptions.
 
   * mqtt-5
   """
 
-  let subscription_identifier_available: (Bool val | None)
+  let subscription_identifier_available: Bool val
   """
   This property declares whether the Server supports Subscription Identifiers.
 
   * mqtt-5
   """
 
-  let shared_subscription_available: (Bool val | None)
+  let shared_subscription_available: Bool val
   """
   This property declares whether the Server supports Shared Subscriptions.
 
   * mqtt-5
   """
 
-  let server_keep_alive: (U16 val | None)
+  let server_keep_alive: U16 val
   """
   This property declares the Keep Alive time assigned by the Server.
 
@@ -167,24 +167,24 @@ class MqttConnAckPacket
     session_present': Bool val,
     reason_code': (MqttConnectReasonCode val | None) = None,
     return_code': (MqttConnectReturnCode val | None) = None,
-    session_expiry_interval': (U32 val | None) = None,
-    receive_maximum': (U16 val | None) = None,
-    maximum_qos': (Bool val | None) = None,
-    retain_available': (Bool val | None) = None,
-    maximum_packet_size': (U32 val | None) = None,
+    session_expiry_interval': U32 val = 0,
+    receive_maximum': U16 val = 0,
+    maximum_qos': Bool val = false,
+    retain_available': Bool val = false,
+    maximum_packet_size': U32 val = 0,
     assigned_client_identifier': (String val | None) = None,
-    topic_alias_maximum': (U16 val | None) = None,
+    topic_alias_maximum': U16 val = 0,
     reason_string': (String val | None) = None,
     user_properties': (Map[String val, String val] val | None) = None,
-    wildcard_subscription_available': (Bool val | None) = None,
-    subscription_identifier_available': (Bool val | None) = None,
-    shared_subscription_available': (Bool val | None) = None,
-    server_keep_alive': (U16 val | None) = None,
+    wildcard_subscription_available': Bool val = false,
+    subscription_identifier_available': Bool val = false,
+    shared_subscription_available': Bool val = false,
+    server_keep_alive': U16 val = 0,
     response_information': (String val | None) = None,
     server_reference': (String val | None) = None,
     authentication_method': (String val | None) = None,
-    authentication_data': (Array[U8 val] val | None) = None
-  ) =>
+    authentication_data': (Array[U8 val] val | None) = None)
+  =>
     session_present = session_present'
     reason_code = reason_code'
     return_code = return_code'
@@ -207,7 +207,12 @@ class MqttConnAckPacket
     authentication_data = authentication_data'
 
 primitive MqttConnAckDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttConnAckPacket val] val ? =>
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: USize box,
+    version: MqttVersion box = MqttVersion5)
+  : MqttDecodeResultType[MqttConnAckPacket val] val ? =>
     let flags = reader.u8() ?
     let session_present: Bool = (flags and 0x01) == 1
     if \likely\ version() == MqttVersion5() then
@@ -241,19 +246,19 @@ primitive MqttConnAckDecoder
       (let property_length', _) = MqttVariableByteInteger.decode_reader(reader) ?
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
-      var session_expiry_interval: (U32 | None) = None
-      var receive_maximum: (U16 | None) = None
-      var maximum_qos: (Bool | None) = None
-      var retain_available: (Bool | None) = None
-      var maximum_packet_size: (U32 | None) = None
+      var session_expiry_interval: U32 = 0
+      var receive_maximum: U16 = 0
+      var maximum_qos: Bool = false
+      var retain_available: Bool = false
+      var maximum_packet_size: U32 = 0
       var assigned_client_identifier: (String | None) = None
-      var topic_alias_maximum: (U16 | None) = None
+      var topic_alias_maximum: U16 = 0
       var reason_string: (String | None) = None
       var user_properties: Map[String val, String val] iso = recover iso Map[String val, String val] end
-      var wildcard_subscription_available: (Bool | None) = None
-      var subscription_identifier_available: (Bool | None) = None
-      var shared_subscription_available: (Bool | None) = None
-      var server_keep_alive: (U16 | None) = None
+      var wildcard_subscription_available: Bool = false
+      var subscription_identifier_available: Bool = false
+      var shared_subscription_available: Bool = false
+      var server_keep_alive: U16 = 0
       var response_information: (String | None) = None
       var server_reference: (String | None) = None
       var authentication_method: (String | None) = None
@@ -376,49 +381,51 @@ primitive MqttConnAckDecoder
     end
 
 primitive MqttConnAckMeasurer
-  fun variable_header_size(data: MqttConnAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>
+  fun variable_header_size(
+    data: MqttConnAckPacket box,
+    maximum_packet_size: USize box = 0,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var size: USize = 1 // flags
     size = size + 1 // reason code(mqtt-5) or return code (mqtt-3.1.1/mqtt-3.1)
     if \likely\ version() == MqttVersion5() then
-      let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size else None end)
+      let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size else 0 end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
     size
 
-  fun properties_size(data: MqttConnAckPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
+  fun properties_size(
+    data: MqttConnAckPacket box,
+    maximum_packet_size: USize box = 0)
+  : USize val =>
     var size: USize = 0
     size = size +
-        match data.session_expiry_interval
-        | let session_expiry_interval: U32 box =>
-          MqttSessionExpiryInterval.size(session_expiry_interval)
+        if data.session_expiry_interval != 0 then
+          MqttSessionExpiryInterval.size(data.session_expiry_interval)
         else
           0
         end
     size = size +
-        match data.receive_maximum
-        | let receive_maximum: U16 box =>
-          MqttReceiveMaximum.size(receive_maximum)
+        if data.receive_maximum != 0 then
+          MqttReceiveMaximum.size(data.receive_maximum)
         else
           0
         end
     size = size +
-        match data.maximum_qos
-        | let maximum_qos: Bool box =>
-          MqttMaximumQoS.size(maximum_qos)
+        if data.maximum_qos then
+          MqttMaximumQoS.size(data.maximum_qos)
         else
           0
         end
     size = size +
-        match data.retain_available
-        | let retain_available: Bool box =>
-          MqttRetainAvailable.size(retain_available)
+        if data.retain_available then
+          MqttRetainAvailable.size(data.retain_available)
         else
           0
         end
     size = size +
-        match data.maximum_packet_size
-        | let maximum_packet_size': U32 box =>
-          MqttMaximumPacketSize.size(maximum_packet_size')
+        if data.maximum_packet_size != 0 then
+          MqttMaximumPacketSize.size(data.maximum_packet_size)
         else
           0
         end
@@ -430,37 +437,32 @@ primitive MqttConnAckMeasurer
           0
         end
     size = size +
-        match data.topic_alias_maximum
-        | let topic_alias_maximum: U16 box =>
-          MqttTopicAliasMaximum.size(topic_alias_maximum)
+        if data.topic_alias_maximum != 0 then
+          MqttTopicAliasMaximum.size(data.topic_alias_maximum)
         else
           0
         end
     size = size +
-        match data.wildcard_subscription_available
-        | let wildcard_subscription_available: Bool box =>
-          MqttWildcardSubscriptionAvailable.size(wildcard_subscription_available)
+        if data.wildcard_subscription_available then
+          MqttWildcardSubscriptionAvailable.size(data.wildcard_subscription_available)
         else
           0
         end
     size = size +
-        match data.subscription_identifier_available
-        | let subscription_identifier_available: Bool box =>
-          MqttSubscriptionIdentifierAvailable.size(subscription_identifier_available)
+        if data.subscription_identifier_available then
+          MqttSubscriptionIdentifierAvailable.size(data.subscription_identifier_available)
         else
           0
         end
     size = size +
-        match data.shared_subscription_available
-        | let shared_subscription_available: Bool box =>
-          MqttSharedSubscriptionAvailable.size(shared_subscription_available)
+        if data.shared_subscription_available then
+          MqttSharedSubscriptionAvailable.size(data.shared_subscription_available)
         else
           0
         end
     size = size +
-        match data.server_keep_alive
-        | let server_keep_alive: U16 box =>
-          MqttServerKeepAlive.size(server_keep_alive)
+        if data.server_keep_alive != 0 then
+          MqttServerKeepAlive.size(data.server_keep_alive)
         else
           0
         end
@@ -492,12 +494,12 @@ primitive MqttConnAckMeasurer
         else
           0
         end
+
     match data.reason_string
     | \unlikely\ let reason_string: String box =>
       let length = MqttReasonString.size(reason_string)
-      match maximum_packet_size
-      | \unlikely\ let maximum_packet_size': USize box =>
-        if maximum_packet_size' >= (size + length) then
+      if (maximum_packet_size != 0) then
+        if maximum_packet_size >= (size + length) then
           size = size + length
         end
       else
@@ -505,13 +507,12 @@ primitive MqttConnAckMeasurer
       end
     end
 
-    match maximum_packet_size
-    | \unlikely\ let maximum_packet_size': USize box =>
+    if maximum_packet_size != 0 then
       match data.user_properties
       | \unlikely\ let user_properties: Map[String val, String val] box =>
         for item in user_properties.pairs() do
           let item_size = MqttUserProperty.size(item)
-          if maximum_packet_size' >= (size + item_size) then
+          if maximum_packet_size >= (size + item_size) then
             size = size + item_size
           end
         end
@@ -528,12 +529,15 @@ primitive MqttConnAckMeasurer
     size
 
 primitive MqttConnAckEncoder
-  fun apply(data: MqttConnAckPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
-    var maximum_size: (USize | None) = None
+  fun apply(
+    data: MqttConnAckPacket box,
+    maximum_packet_size: USize box = 0,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8 val] val =>
+    var maximum_size: USize = 0
     var remaining: USize = 0
-    match maximum_packet_size
-    | let maximum_packet_size': USize box =>
-      var maximum: USize = maximum_packet_size' - 1 - 1
+    if maximum_packet_size != 0 then
+      var maximum: USize = maximum_packet_size - 1 - 1
       remaining = MqttConnAckMeasurer.variable_header_size(data, maximum, version)
       var remaining_length = MqttVariableByteInteger.size(remaining.ulong())
       maximum = maximum - remaining_length
@@ -548,7 +552,7 @@ primitive MqttConnAckEncoder
       until delta == 0 end
       maximum_size = maximum
     else
-      remaining = MqttConnAckMeasurer.variable_header_size(data, None, version)
+      remaining = MqttConnAckMeasurer.variable_header_size(data, 0, version)
     end
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1
@@ -570,29 +574,24 @@ primitive MqttConnAckEncoder
 
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
-      match data.session_expiry_interval
-      | let session_expiry_interval: U32 box =>
-        MqttSessionExpiryInterval.encode(buf, session_expiry_interval)
+      if data.session_expiry_interval != 0 then
+        MqttSessionExpiryInterval.encode(buf, data.session_expiry_interval)
       end
 
-      match data.receive_maximum
-      | let receive_maximum: U16 box =>
-        MqttReceiveMaximum.encode(buf, receive_maximum)
+      if data.receive_maximum != 0 then
+        MqttReceiveMaximum.encode(buf, data.receive_maximum)
       end
 
-      match data.maximum_qos
-      | let maximum_qos: Bool box =>
-        MqttMaximumQoS.encode(buf, maximum_qos)
+      if data.maximum_qos then
+        MqttMaximumQoS.encode(buf, data.maximum_qos)
       end
 
-      match data.retain_available
-      | let retain_available: Bool box =>
-        MqttRetainAvailable.encode(buf, retain_available)
+      if data.retain_available then
+        MqttRetainAvailable.encode(buf, data.retain_available)
       end
 
-      match data.maximum_packet_size
-      | let maximum_packet_size': U32 box =>
-        MqttMaximumPacketSize.encode(buf, maximum_packet_size')
+      if data.maximum_packet_size != 0 then
+        MqttMaximumPacketSize.encode(buf, data.maximum_packet_size)
       end
 
       match data.assigned_client_identifier
@@ -600,29 +599,24 @@ primitive MqttConnAckEncoder
         MqttAssignedClientIdentifier.encode(buf, assigned_client_identifier)
       end
 
-      match data.topic_alias_maximum
-      | let topic_alias_maximum: U16 box =>
-        MqttTopicAliasMaximum.encode(buf, topic_alias_maximum)
+      if data.topic_alias_maximum != 0 then
+        MqttTopicAliasMaximum.encode(buf, data.topic_alias_maximum)
       end
 
-      match data.wildcard_subscription_available
-      | let wildcard_subscription_available: Bool box =>
-        MqttWildcardSubscriptionAvailable.encode(buf, wildcard_subscription_available)
+      if data.wildcard_subscription_available then
+        MqttWildcardSubscriptionAvailable.encode(buf, data.wildcard_subscription_available)
       end
 
-      match data.subscription_identifier_available
-      | let subscription_identifier_available: Bool box =>
-        MqttSubscriptionIdentifierAvailable.encode(buf, subscription_identifier_available)
+      if data.subscription_identifier_available then
+        MqttSubscriptionIdentifierAvailable.encode(buf, data.subscription_identifier_available)
       end
 
-      match data.shared_subscription_available
-      | let shared_subscription_available: Bool box =>
-        MqttSharedSubscriptionAvailable.encode(buf, shared_subscription_available)
+      if data.shared_subscription_available then
+        MqttSharedSubscriptionAvailable.encode(buf, data.shared_subscription_available)
       end
 
-      match data.server_keep_alive
-      | let server_keep_alive: U16 box =>
-        MqttServerKeepAlive.encode(buf, server_keep_alive)
+      if data.server_keep_alive != 0 then
+        MqttServerKeepAlive.encode(buf, data.server_keep_alive)
       end
 
       match data.response_information

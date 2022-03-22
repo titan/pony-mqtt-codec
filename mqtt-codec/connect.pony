@@ -2,10 +2,14 @@ use "buffered"
 use "collections"
 
 primitive MqttCleanStart
-  fun decode(flags: U8 box): Bool val =>
+  fun decode(
+    flags: U8 box)
+  : Bool val =>
     (flags and 0x02) != 0
 
-  fun encode(data: Bool box): U8 val =>
+  fun encode(
+    data: Bool box)
+  : U8 val =>
     if data then
       0x02
     else
@@ -13,10 +17,14 @@ primitive MqttCleanStart
     end
 
 primitive MqttWillFlag
-  fun decode(flags: U8 box): Bool val =>
+  fun decode(
+    flags: U8 box)
+  : Bool val =>
     (flags and 0x04) != 0
 
-  fun encode(data: Bool box): U8 val =>
+  fun encode(
+    data: Bool box)
+  : U8 val =>
     if data then
       0x04
     else
@@ -24,18 +32,26 @@ primitive MqttWillFlag
     end
 
 primitive MqttWillQos
-  fun decode(flags: U8 box): MqttQoS val =>
+  fun decode(
+    flags: U8 box)
+  : MqttQoS val =>
     _MqttQoSDecoder((flags and 0x18) >> 3)
 
-  fun encode(data: MqttQoS box): U8 val =>
+  fun encode(
+    data: MqttQoS box)
+  : U8 val =>
     let qos = _MqttQoSEncoder(data)
     qos << 3
 
 primitive MqttWillRetain
-  fun decode(flags: U8): Bool val =>
+  fun decode(
+    flags: U8)
+  : Bool val =>
     (flags and 0x20) != 0
 
-  fun encode(data: Bool): U8 val =>
+  fun encode(
+    data: Bool)
+  : U8 val =>
     if data then
       0x20
     else
@@ -43,10 +59,14 @@ primitive MqttWillRetain
     end
 
 primitive MqttPasswordFlag
-  fun decode(flags: U8 box): Bool val =>
+  fun decode(
+    flags: U8 box)
+  : Bool val =>
     (flags and 0x40) != 0
 
-  fun encode(data: Bool box): U8 val =>
+  fun encode(
+    data: Bool box)
+  : U8 val =>
     if data then
       0x40
     else
@@ -54,10 +74,14 @@ primitive MqttPasswordFlag
     end
 
 primitive MqttUserNameFlag
-  fun decode(flags: U8 box): Bool val =>
+  fun decode(
+    flags: U8 box)
+  : Bool val =>
     (flags and 0x80) != 0
 
-  fun encode(data: Bool box): U8 val =>
+  fun encode(
+    data: Bool box)
+  : U8 val =>
     if data then
       0x80
     else
@@ -65,7 +89,7 @@ primitive MqttUserNameFlag
     end
 
 class MqttWillProperties
-  let will_delay_interval: (U32 val | None)
+  let will_delay_interval: U32 val
   """
   It represents the Will Delay Interval in seconds.
 
@@ -80,7 +104,7 @@ class MqttWillProperties
   * mqtt-5
   """
 
-  let message_expiry_interval: (U32 val | None)
+  let message_expiry_interval: U32 val
   """
   It is the lifetime of the Will Message in seconds and is sent as the
   Publication Expiry Interval when the Server publishes the Will Message.
@@ -121,14 +145,14 @@ class MqttWillProperties
   """
 
   new iso create(
-    will_delay_interval': (U32 val | None) = None,
+    will_delay_interval': U32 val = 0,
     payload_format_indicator': MqttPayloadFormatIndicatorType val,
-    message_expiry_interval': (U32 val | None) = None,
+    message_expiry_interval': U32 val = 0,
     content_type': String val,
     response_topic': String val,
     correlation_data': (Array[U8 val] val | None) = None,
-    user_properties': (Array[(String val, String val)] val | None) = None
-  ) =>
+    user_properties': (Array[(String val, String val)] val | None) = None)
+  =>
     will_delay_interval = will_delay_interval'
     payload_format_indicator = payload_format_indicator'
     message_expiry_interval = message_expiry_interval'
@@ -196,14 +220,14 @@ class MqttConnectPacket
   * mqtt-3.1
   """
 
-  let session_expiry_interval: (U32 val | None)
+  let session_expiry_interval: U32 val
   """
   It represents the Session Expiry Interval in seconds.
 
   * mqtt-5
   """
 
-  let receive_maximum: (U16 val | None)
+  let receive_maximum: U16 val
   """
   It represents the Receive Maximum value. The Client uses this value to limit
   the number of QoS 1 and QoS 2 publications that it is willing to process
@@ -213,14 +237,14 @@ class MqttConnectPacket
   * mqtt-5
   """
 
-  let maximum_packet_size: (U32 val | None)
+  let maximum_packet_size: U32 val
   """
   It represents the Maximum Packet Size the Client is willing to accept.
 
   * mqtt-5
   """
 
-  let topic_alias_maximum: (U16 val | None)
+  let topic_alias_maximum: U16 val
   """
   It represents the Topic Alias Maximum value. This value indicates the highest
   value that the Client will accept as a Topic Alias sent by the Server. The
@@ -331,11 +355,11 @@ class MqttConnectPacket
     clean_start': Bool val = false,
     will_qos': MqttQoS val = MqttQoS0,
     will_retain': Bool val = false,
-    keep_alive': U16 val,
-    session_expiry_interval': (U32 val | None) = None,
-    receive_maximum': (U16 val | None) = None,
-    maximum_packet_size': (U32 val | None) = None,
-    topic_alias_maximum': (U16 val | None) = None,
+    keep_alive': U16 val = 0,
+    session_expiry_interval': U32 val = 0,
+    receive_maximum': U16 val = 0,
+    maximum_packet_size': U32 val = 0,
+    topic_alias_maximum': U16 val = 0,
     request_response_information': Bool val = false,
     request_problem_information': Bool val = false,
     user_properties': (Map[String val, String val] val | None) = None,
@@ -346,8 +370,8 @@ class MqttConnectPacket
     will_topic': (String val | None) = None,
     will_payload': (Array[U8 val] val | None) = None,
     user_name': (String val | None) = None,
-    password': (Array[U8 val] val | None) = None
-  ) =>
+    password': (Array[U8 val] val | None) = None)
+  =>
     protocol_name = protocol_name'
     protocol_version = protocol_version'
     clean_start = clean_start'
@@ -371,7 +395,11 @@ class MqttConnectPacket
     password = password'
 
 primitive MqttConnectDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: USize box): MqttDecodeResultType[MqttConnectPacket val] val ? =>
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: USize box)
+  : MqttDecodeResultType[MqttConnectPacket val] val ? =>
     (let protocol_name, _) = MqttUtf8String.decode(reader) ?
     let protocol_version =
       match reader.u8() ?
@@ -388,10 +416,10 @@ primitive MqttConnectDecoder
     let password_flag = MqttPasswordFlag.decode(flags)
     let user_name_flag = MqttUserNameFlag.decode(flags)
     (let keep_alive, _) = MqttTwoByteInteger.decode(reader) ?
-    var session_expiry_interval: (U32 val | None) = None
-    var receive_maximum: (U16 val | None) = None
-    var maximum_packet_size: (U32 val | None) = None
-    var topic_alias_maximum: (U16 val | None) = None
+    var session_expiry_interval: U32 val = 0
+    var receive_maximum: U16 val = 0
+    var maximum_packet_size: U32 val = 0
+    var topic_alias_maximum: U16 val = 0
     var request_response_information: Bool val = false
     var request_problem_information: Bool val = false
     var user_properties: (Map[String val, String val] iso | None) = None
@@ -458,7 +486,7 @@ primitive MqttConnectDecoder
         var will_decoded_length: USize = 0
         var will_delay_interval: U32 val = 0
         var payload_format_indicator: MqttPayloadFormatIndicatorType val = MqttUnspecifiedBytes
-        var message_expiry_interval: (U32 val | None) = None
+        var message_expiry_interval: U32 val = 0
         var content_type: String val = ""
         var response_topic: String val = ""
         var correlation_data: (Array[U8 val] val | None) = None
@@ -547,7 +575,10 @@ primitive MqttConnectDecoder
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttConnectMeasurer
-  fun variable_header_size(data: MqttConnectPacket box, version: MqttVersion box): USize val =>
+  fun variable_header_size(
+    data: MqttConnectPacket box,
+    version: MqttVersion box)
+  : USize val =>
     var size: USize = 0
     if \unlikely\ version() == MqttVersion31() then
       size = MqttUtf8String.size("MQisdp")
@@ -563,7 +594,10 @@ primitive MqttConnectMeasurer
     end
     size
 
-  fun payload_size(data: MqttConnectPacket box, version: MqttVersion box): USize val =>
+  fun payload_size(
+    data: MqttConnectPacket box,
+    version: MqttVersion box)
+  : USize val =>
     var size: USize = 0
 
     let will_flag: Bool =
@@ -627,51 +661,47 @@ primitive MqttConnectMeasurer
         end
     size
 
-  fun properties_size(data: MqttConnectPacket box): USize val =>
+  fun properties_size(
+    data: MqttConnectPacket box)
+  : USize val =>
     var size: USize = 0
     size = size +
-        match data.session_expiry_interval
-        | let session_expiry_interval: U32 box =>
-          MqttSessionExpiryInterval.size(session_expiry_interval)
+        if data.session_expiry_interval != 0 then
+          MqttSessionExpiryInterval.size(data.session_expiry_interval)
         else
           0
         end
 
     size = size +
-        match data.receive_maximum
-        | let receive_maximum: U16 box =>
-          MqttReceiveMaximum.size(receive_maximum)
+        if data.receive_maximum != 0 then
+          MqttReceiveMaximum.size(data.receive_maximum)
         else
           0
         end
 
     size = size +
-        match data.maximum_packet_size
-        | let maximum_packet_size: U32 box =>
-          MqttMaximumPacketSize.size(maximum_packet_size)
+        if data.maximum_packet_size != 0 then
+          MqttMaximumPacketSize.size(data.maximum_packet_size)
         else
           0
         end
 
     size = size +
-        match data.topic_alias_maximum
-        | let topic_alias_maximum: U16 box =>
-          MqttTopicAliasMaximum.size(topic_alias_maximum)
+        if data.topic_alias_maximum != 0 then
+          MqttTopicAliasMaximum.size(data.topic_alias_maximum)
         else
           0
         end
 
     size = size +
-        match data.request_response_information
-        | true =>
+        if data.request_response_information then
           MqttRequestResponseInformation.size(true)
         else
           0
         end
 
     size = size +
-        match data.request_problem_information
-        | true =>
+        if data.request_problem_information then
           MqttRequestProblemInformation.size(true)
         else
           0
@@ -702,13 +732,14 @@ primitive MqttConnectMeasurer
 
     size
 
-  fun will_properties_size(will_properties: MqttWillProperties box): USize val =>
+  fun will_properties_size(
+    will_properties: MqttWillProperties box)
+  : USize val =>
     var size: USize = 0
 
     size = size +
-        match will_properties.will_delay_interval
-        | let will_delay_interval: U32 box =>
-          MqttWillDelayInterval.size(will_delay_interval)
+        if will_properties.will_delay_interval != 0 then
+          MqttWillDelayInterval.size(will_properties.will_delay_interval)
         else
           0
         end
@@ -716,9 +747,8 @@ primitive MqttConnectMeasurer
     size = size + MqttPayloadFormatIndicator.size(will_properties.payload_format_indicator)
 
     size = size +
-        match will_properties.message_expiry_interval
-        | let message_expiry_interval: U32 box =>
-          MqttMessageExpiryInterval.size(message_expiry_interval)
+        if will_properties.message_expiry_interval != 0 then
+          MqttMessageExpiryInterval.size(will_properties.message_expiry_interval)
         else
           0
         end
@@ -745,7 +775,10 @@ primitive MqttConnectMeasurer
     size
 
 primitive MqttConnectEncoder
-  fun apply(data: MqttConnectPacket box, version: MqttVersion box = MqttVersion5): Array[U8] val =>
+  fun apply(
+    data: MqttConnectPacket box,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8] val =>
     let size = (MqttConnectMeasurer.variable_header_size(data, version) + MqttConnectMeasurer.payload_size(data, version)).ulong()
     let user_name_flag: Bool =
       match data.user_name
@@ -795,33 +828,27 @@ primitive MqttConnectEncoder
 
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
-      match data.session_expiry_interval
-      | let session_expiry_interval: U32 box =>
-        MqttSessionExpiryInterval.encode(buf, session_expiry_interval)
+      if data.session_expiry_interval != 0 then
+        MqttSessionExpiryInterval.encode(buf, data.session_expiry_interval)
       end
 
-      match data.receive_maximum
-      | let receive_maximum: U16 box =>
-        MqttReceiveMaximum.encode(buf, receive_maximum)
+      if data.receive_maximum != 0 then
+        MqttReceiveMaximum.encode(buf, data.receive_maximum)
       end
 
-      match data.maximum_packet_size
-      | let maximum_packet_size: U32 box =>
-        MqttMaximumPacketSize.encode(buf, maximum_packet_size)
+      if data.maximum_packet_size != 0 then
+        MqttMaximumPacketSize.encode(buf, data.maximum_packet_size)
       end
 
-      match data.topic_alias_maximum
-      | let topic_alias_maximum: U16 box =>
-        MqttTopicAliasMaximum.encode(buf, topic_alias_maximum)
+      if data.topic_alias_maximum != 0 then
+        MqttTopicAliasMaximum.encode(buf, data.topic_alias_maximum)
       end
 
-      match data.request_response_information
-      | true =>
+      if data.request_response_information then
         MqttRequestResponseInformation.encode(buf, true)
       end
 
-      match data.request_problem_information
-      | true =>
+      if data.request_problem_information then
         MqttRequestProblemInformation.encode(buf, true)
       end
 
@@ -852,16 +879,14 @@ primitive MqttConnectEncoder
           let will_properties_length = MqttConnectMeasurer.will_properties_size(will_properties)
           MqttVariableByteInteger.encode(buf, will_properties_length.ulong())
 
-          match will_properties.will_delay_interval
-          | let will_delay_interval: U32 box =>
-            MqttWillDelayInterval.encode(buf, will_delay_interval)
+          if will_properties.will_delay_interval != 0 then
+            MqttWillDelayInterval.encode(buf, will_properties.will_delay_interval)
           end
 
           MqttPayloadFormatIndicator.encode(buf, will_properties.payload_format_indicator)
 
-          match will_properties.message_expiry_interval
-          | let message_expiry_interval: U32 box =>
-            MqttMessageExpiryInterval.encode(buf, message_expiry_interval)
+          if will_properties.message_expiry_interval != 0 then
+            MqttMessageExpiryInterval.encode(buf, will_properties.message_expiry_interval)
           end
 
           MqttContentType.encode(buf, will_properties.content_type)

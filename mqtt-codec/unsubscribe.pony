@@ -30,16 +30,21 @@ class MqttUnsubscribePacket
   """
 
   new iso create(
-      packet_identifier': U16 val,
-      topic_filters': Array[String val] val,
-      user_properties': (Map[String val, String val] val | None) = None
-  ) =>
-      packet_identifier = packet_identifier'
-      topic_filters = topic_filters'
-      user_properties = user_properties'
+    packet_identifier': U16 val,
+    topic_filters': Array[String val] val,
+    user_properties': (Map[String val, String val] val | None) = None)
+  =>
+    packet_identifier = packet_identifier'
+    topic_filters = topic_filters'
+    user_properties = user_properties'
 
 primitive MqttUnsubscribeDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: box->USize, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttUnsubscribePacket val] val ? =>
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: box->USize,
+    version: MqttVersion box = MqttVersion5)
+  : MqttDecodeResultType[MqttUnsubscribePacket val] val ? =>
     var consumed: USize = 0
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
     consumed = consumed + consumed1
@@ -77,7 +82,10 @@ primitive MqttUnsubscribeDecoder
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttUnsubscribeMeasurer
-  fun variable_header_size(data: MqttUnsubscribePacket box, version: MqttVersion box = MqttVersion5): USize val =>
+  fun variable_header_size(
+    data: MqttUnsubscribePacket box,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var size: USize = 0
     size = MqttTwoByteInteger.size(data.packet_identifier)
     if \likely\ version() == MqttVersion5() then
@@ -86,7 +94,9 @@ primitive MqttUnsubscribeMeasurer
     end
     size
 
-  fun properties_size(data: MqttUnsubscribePacket box): USize val =>
+  fun properties_size(
+    data: MqttUnsubscribePacket box)
+  : USize val =>
     var size: USize = 0
 
     match data.user_properties
@@ -98,7 +108,9 @@ primitive MqttUnsubscribeMeasurer
 
     size
 
-  fun payload_size(data: MqttUnsubscribePacket box): USize val =>
+  fun payload_size(
+    data: MqttUnsubscribePacket box)
+  : USize val =>
     var size: USize = 0
     for topic_filter in data.topic_filters.values() do
       size = size + MqttUtf8String.size(topic_filter)
@@ -106,7 +118,10 @@ primitive MqttUnsubscribeMeasurer
     size
 
 primitive MqttUnsubscribeEncoder
-  fun apply(data: MqttUnsubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
+  fun apply(
+    data: MqttUnsubscribePacket box,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8 val] val =>
     let size = (MqttUnsubscribeMeasurer.variable_header_size(data, version) + MqttUnsubscribeMeasurer.payload_size(data)).ulong()
 
     var buf = Array[U8 val](MqttVariableByteInteger.size(size) + size.usize() + 1)

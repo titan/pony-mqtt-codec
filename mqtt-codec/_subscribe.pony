@@ -73,7 +73,7 @@ class _TestSubscribe is UnitTest
         try h.assert_eq[U8 val](pkt.subscriptions(0)?.qos_level(), MqttQoS0()) else h.fail("Expect first qos-level to be QoS0 but got None") end
         try h.assert_eq[String val](pkt.subscriptions(1)?.topic_filter, "foobar") else h.fail("Expect second topic-filter to be foobar but got None") end
         try h.assert_eq[U8 val](pkt.subscriptions(1)?.qos_level(), MqttQoS1()) else h.fail("Expect second qos-level to be QoS1 but got None") end
-        try h.assert_eq[ULong val](pkt.subscription_identifier as ULong val, 65535) else h.fail("Expect subscription-identifier to be 65535 but got None") end
+        h.assert_eq[ULong val](pkt.subscription_identifier, 65535)
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
         try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("hello")?, "world") else h.fail("Expect hello in user-properties to be world") end

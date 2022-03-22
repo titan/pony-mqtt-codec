@@ -90,10 +90,10 @@ class _TestConnect is UnitTest
       match packet
       | let pkt: MqttConnectPacket val =>
         h.assert_eq[U16 val](pkt.keep_alive, 300)
-        try h.assert_eq[U32 val](pkt.session_expiry_interval as U32, 10) else h.fail("Expect session_expiry_interval to be 10 but got None") end
-        try h.assert_eq[U16 val](pkt.receive_maximum as U16, 65535) else h.fail("Expect receive-maximum to be 65535 but got None") end
-        try h.assert_eq[U32 val](pkt.maximum_packet_size as U32, 65535) else h.fail("Expect maximum-packet-size to be 65535 but got None") end
-        try h.assert_eq[U16 val](pkt.topic_alias_maximum as U16, 65535) else h.fail("Expect topic-alias-maximum to be 65535 but got None") end
+        h.assert_eq[U32 val](pkt.session_expiry_interval, 10)
+        h.assert_eq[U16 val](pkt.receive_maximum, 65535)
+        h.assert_eq[U32 val](pkt.maximum_packet_size, 65535)
+        h.assert_eq[U16 val](pkt.topic_alias_maximum, 65535)
         h.assert_eq[Bool val](pkt.request_response_information, true)
         h.assert_eq[Bool val](pkt.request_problem_information, true)
         try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
@@ -102,9 +102,9 @@ class _TestConnect is UnitTest
         try h.assert_eq[String val](pkt.authentication_method as String, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
         try h.assert_array_eq[U8 val](pkt.authentication_data as Array[U8 val] val, [8; 9; 0x0A; 0x0B]) else h.fail("Expect authentication-data to be [8, 9, A, B] but got None") end
         h.assert_eq[String val](pkt.client_identifier, "client-id")
-        try h.assert_eq[U32 val]((pkt.will_properties as MqttWillProperties val).will_delay_interval as U32, 100) else h.fail("Expect will-delay-interval to be 100 but got None") end
+        try h.assert_eq[U32 val]((pkt.will_properties as MqttWillProperties val).will_delay_interval, 100) else h.fail("Expect will-delay-interval to be 100 but got None") end
         try h.assert_eq[U8 val]((pkt.will_properties as MqttWillProperties val).payload_format_indicator(), MqttCharacterData()) else h.fail("Expect payload-format-indicator to be charactor-data but got None") end
-        try h.assert_eq[U32 val]((pkt.will_properties as MqttWillProperties val).message_expiry_interval as U32, 65535) else h.fail("Expect message-expiry-interval to be 65535 but got None") end
+        try h.assert_eq[U32 val]((pkt.will_properties as MqttWillProperties val).message_expiry_interval, 65535) else h.fail("Expect message-expiry-interval to be 65535 but got None") end
         try h.assert_eq[String val]((pkt.will_properties as MqttWillProperties val).content_type, "json") else h.fail("Expect content-type to be json but got None") end
         try h.assert_eq[String val]((pkt.will_properties as MqttWillProperties val).response_topic, "response-topic") else h.fail("Expect response-topic to be response-topic but got None") end
         try h.assert_array_eq[U8 val]((pkt.will_properties as MqttWillProperties val).correlation_data as Array[U8 val] val, [0x0C; 0x0D; 0x0E; 0x0F]) else h.fail("Expect correlation-data to be [C, D, E, F] but got None") end

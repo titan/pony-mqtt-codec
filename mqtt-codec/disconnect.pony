@@ -4,14 +4,14 @@ use "collections"
 type MqttDisconnectReasonCode is (MqttNormalDisconnection | MqttDisconnectWithWillMessage | MqttUnspecifiedError | MqttMalformedPacket | MqttProtocolError | MqttImplementationSpecificError | MqttNotAuthorized5 | MqttServerBusy | MqttServerShuttingDown | MqttKeepAliveTimeout | MqttSessionTakenOver | MqttTopicFilterInvalid | MqttTopicNameInvalid | MqttReceiveMaximumExceeded | MqttTopicAliasInvalid | MqttPacketTooLarge | MqttMessageRateTooHigh | MqttMessageRateTooHigh | MqttQuotaExceeded | MqttAdministrativeAction | MqttPayloadFormatInvalid | MqttRetainNotSupported | MqttQoSNotSupported | MqttUseAnotherServer | MqttServerMoved | MqttSharedSubscriptionsNotSupported | MqttConnectionRateExceeded | MqttMaximumConnectTime | MqttSubscriptionIdentifiersNotSupported | MqttWildcardSubscriptionsNotSupported)
 
 class MqttDisconnectPacket
-  let reason_code: (MqttDisconnectReasonCode val | None)
+  let reason_code: MqttDisconnectReasonCode val
   """
   The Disconnect Reason Code
 
   * mqtt-5
   """
 
-  let session_expiry_interval: (U32 val | None)
+  let session_expiry_interval: U32 val
   """
   It represents the Session Expiry Interval in seconds.
 
@@ -42,22 +42,27 @@ class MqttDisconnectPacket
   """
 
   new iso create(
-      reason_code': (MqttDisconnectReasonCode val | None) = None,
-      session_expiry_interval': (U32 val | None) = None,
-      reason_string': (String val | None) = None,
-      user_properties': (Map[String val, String val] val | None) = None,
-      server_reference': (String val | None) = None
-  ) =>
-      reason_code = reason_code'
-      session_expiry_interval = session_expiry_interval'
-      reason_string = reason_string'
-      user_properties = user_properties'
-      server_reference = server_reference'
+    reason_code': MqttDisconnectReasonCode val = MqttNormalDisconnection,
+    session_expiry_interval': U32 val = 0,
+    reason_string': (String val | None) = None,
+    user_properties': (Map[String val, String val] val | None) = None,
+    server_reference': (String val | None) = None)
+  =>
+    reason_code = reason_code'
+    session_expiry_interval = session_expiry_interval'
+    reason_string = reason_string'
+    user_properties = user_properties'
+    server_reference = server_reference'
 
 class MqttDisconnectDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttDisconnectPacket val] val ? =>
-    var reason_code: (MqttDisconnectReasonCode | None) = None
-    var session_expiry_interval: (U32 | None) = None
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: USize box,
+    version: MqttVersion box = MqttVersion5)
+  : MqttDecodeResultType[MqttDisconnectPacket val] val ? =>
+    var reason_code: MqttDisconnectReasonCode = MqttNormalDisconnection
+    var session_expiry_interval: U32 = 0
     var reason_string: (String | None) = None
     var user_properties: (Map[String, String] iso | None) = None
     var server_reference: (String | None) = None
@@ -139,7 +144,11 @@ class MqttDisconnectDecoder
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttDisconnectMeasurer
-  fun variable_header_size(data: MqttDisconnectPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): USize val =>
+  fun variable_header_size(
+    data: MqttDisconnectPacket box,
+    maximum_packet_size: USize box = 0,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     """
     The Reason Code and Property Length can be omitted if the Reason Code is
     0x00 (Normal disconnecton) and there are no Properties. In this case the
@@ -148,14 +157,9 @@ primitive MqttDisconnectMeasurer
     var size: USize = 0
     if \likely\ version() == MqttVersion5() then
       size = 1 // reason code
-      let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size else None end)
+      let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size else 0 end)
       if properties_length == 0 then
-        match data.reason_code
-        | let reason_code: MqttDisconnectReasonCode =>
-          if reason_code() == MqttNormalDisconnection() then
-            return 0
-          end
-        else
+        if data.reason_code() == MqttNormalDisconnection() then
           return 0
         end
       end
@@ -163,13 +167,15 @@ primitive MqttDisconnectMeasurer
     end
     size
 
-  fun properties_size(data: MqttDisconnectPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
+  fun properties_size(
+    data: MqttDisconnectPacket box,
+    maximum_packet_size: USize box = 0)
+  : USize val =>
     var size: USize = 0
 
     size = size +
-        match data.session_expiry_interval
-        | let session_expiry_interval: U32 box =>
-          MqttSessionExpiryInterval.size(session_expiry_interval)
+        if data.session_expiry_interval != 0 then
+          MqttSessionExpiryInterval.size(data.session_expiry_interval)
         else
           0
         end
@@ -185,9 +191,8 @@ primitive MqttDisconnectMeasurer
     match data.reason_string
     | let reason_string: String box =>
       let length = MqttReasonString.size(reason_string)
-      match maximum_packet_size
-      | let maximum_packet_size': USize box =>
-        if maximum_packet_size' >= (size + length) then
+      if maximum_packet_size != 0 then
+        if maximum_packet_size >= (size + length) then
           size = size + length
         end
       else
@@ -197,11 +202,10 @@ primitive MqttDisconnectMeasurer
 
     match data.user_properties
     | let user_properties: Map[String val, String val] box =>
-      match maximum_packet_size
-      | let maximum_packet_size': USize box =>
+      if maximum_packet_size != 0 then
         for item in user_properties.pairs() do
           let item_size = MqttUserProperty.size(item)
-          if maximum_packet_size' >= (size + item_size) then
+          if maximum_packet_size >= (size + item_size) then
             size = size + item_size
           else
             break
@@ -217,12 +221,15 @@ primitive MqttDisconnectMeasurer
     size
 
 primitive MqttDisconnectEncoder
-  fun apply(data: MqttDisconnectPacket box, maximum_packet_size: (USize box | None) = None, version: MqttVersion box = MqttVersion5): Array[U8 val] val =>
-    var maximum_size: (USize | None) = None
+  fun apply(
+    data: MqttDisconnectPacket box,
+    maximum_packet_size: USize box = 0,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8 val] val =>
+    var maximum_size: USize = 0
     var remaining: USize = 0
-    match maximum_packet_size
-    | let maximum_packet_size': USize box =>
-      var maximum: USize = maximum_packet_size' - 1 - 1
+    if maximum_packet_size != 0 then
+      var maximum: USize = maximum_packet_size - 1 - 1
       remaining = MqttDisconnectMeasurer.variable_header_size(data, maximum, version)
       var remaining_length = MqttVariableByteInteger.size(remaining.ulong())
       maximum = maximum - remaining_length
@@ -237,7 +244,7 @@ primitive MqttDisconnectEncoder
       until delta == 0 end
       maximum_size = maximum
     else
-      remaining = MqttDisconnectMeasurer.variable_header_size(data, None, version)
+      remaining = MqttDisconnectMeasurer.variable_header_size(data, 0, version)
     end
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1
@@ -250,23 +257,15 @@ primitive MqttDisconnectEncoder
     if \likely\ version() == MqttVersion5() then
       var properties_length: USize = MqttDisconnectMeasurer.properties_size(data, maximum_size)
 
-      match data.reason_code
-      | MqttNormalDisconnection =>
-        if properties_length == 0 then
-          return U8ArrayClone(buf)
-        end
-        buf.push(MqttNormalDisconnection())
-      | let reason_code: MqttDisconnectReasonCode =>
-        buf.push(reason_code())
-      else
-        buf.push(MqttNormalDisconnection())
+      if (data.reason_code() == MqttNormalDisconnection()) and (properties_length == 0) then
+        return U8ArrayClone(buf)
       end
+      buf.push(data.reason_code())
 
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
-      match data.session_expiry_interval
-      | let session_expiry_interval: U32 box =>
-        MqttSessionExpiryInterval.encode(buf, session_expiry_interval)
+      if data.session_expiry_interval != 0 then
+        MqttSessionExpiryInterval.encode(buf, data.session_expiry_interval)
       end
 
       match data.server_reference

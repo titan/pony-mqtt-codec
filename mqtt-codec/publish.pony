@@ -2,10 +2,14 @@ use "buffered"
 use "collections"
 
 primitive _MqttDup
-  fun decode(flag: U8 box): Bool val =>
+  fun decode(
+    flag: U8 box)
+  : Bool val =>
     (flag and 0x08) == 0x08
 
-  fun encode(data: Bool box): U8 val =>
+  fun encode(
+    data: Bool box)
+  : U8 val =>
     if data then
       0x08
     else
@@ -13,10 +17,14 @@ primitive _MqttDup
     end
 
 primitive _MqttRetain
-  fun decode(flag: U8 box): Bool val =>
+  fun decode(
+    flag: U8 box)
+  : Bool val =>
     (flag and 0x01) == 0x01
 
-  fun encode(data: Bool box): U8 val =>
+  fun encode(
+    data: Bool box)
+  : U8 val =>
     if data then
       0x01
     else
@@ -70,7 +78,7 @@ class MqttPublishPacket
   * mqtt-3.1
   """
 
-  let packet_identifier: (U16 val | None)
+  let packet_identifier: U16 val
   """
   The Packet Identifier field is only present in PUBLISH packets where the QoS
   level is 1 or 2.
@@ -88,7 +96,7 @@ class MqttPublishPacket
   * mqtt-5
   """
 
-  let message_expiry_interval: (U32 val | None)
+  let message_expiry_interval: U32 val
   """
   It is the lifetime of the Application Message in seconds. If absent, the
   Application Message does not expire.
@@ -96,7 +104,7 @@ class MqttPublishPacket
   * mqtt-5
   """
 
-  let topic_alias: (U16 val | None)
+  let topic_alias: U16 val
   """
   A Topic Alias is an integer value that is used to identify the Topic instead
   of using the Topic Name. This reduces the size of the PUBLISH packet, and is
@@ -130,7 +138,7 @@ class MqttPublishPacket
   * mqtt-5
   """
 
-  let subscription_identifier: (ULong val | None)
+  let subscription_identifier: ULong val
   """
   It represents the identifier of the subscription.
 
@@ -153,45 +161,50 @@ class MqttPublishPacket
   """
 
   new iso create(
-    dup_flag': Bool val,
+    dup_flag': Bool val = false,
     qos_level': MqttQoS val,
-    retain': Bool val,
+    retain': Bool val = false,
     topic_name': String val,
-    packet_identifier': (U16 val | None) = None,
+    packet_identifier': U16 val = 0,
     payload_format_indicator': (MqttPayloadFormatIndicatorType val | None) = None,
-    message_expiry_interval': (U32 val | None) = None,
-    topic_alias': (U16 val | None) = None,
+    message_expiry_interval': U32 val = 0,
+    topic_alias': U16 val = 0,
     response_topic': (String val | None) = None,
     correlation_data': (Array[U8 val] val | None) = None,
     user_properties': (Map[String val, String val] val | None) = None,
-    subscription_identifier': (ULong val | None) = None,
+    subscription_identifier': ULong val = 0,
     content_type': (String val | None) = None,
-    payload': (Array[U8 val] val | None) = None
-  ) =>
-  dup_flag = dup_flag'
-  qos_level = qos_level'
-  retain = retain'
-  topic_name = topic_name'
-  packet_identifier = packet_identifier'
-  payload_format_indicator = payload_format_indicator'
-  message_expiry_interval = message_expiry_interval'
-  topic_alias = topic_alias'
-  response_topic = response_topic'
-  correlation_data = correlation_data'
-  user_properties = user_properties'
-  subscription_identifier = subscription_identifier'
-  content_type = content_type'
-  payload = payload'
+    payload': (Array[U8 val] val | None) = None)
+  =>
+    dup_flag = dup_flag'
+    qos_level = qos_level'
+    retain = retain'
+    topic_name = topic_name'
+    packet_identifier = packet_identifier'
+    payload_format_indicator = payload_format_indicator'
+    message_expiry_interval = message_expiry_interval'
+    topic_alias = topic_alias'
+    response_topic = response_topic'
+    correlation_data = correlation_data'
+    user_properties = user_properties'
+    subscription_identifier = subscription_identifier'
+    content_type = content_type'
+    payload = payload'
 
 primitive MqttPublishDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: USize box, version: MqttVersion box = MqttVersion5): MqttDecodeResultType[MqttPublishPacket val] val ? =>
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: USize box,
+    version: MqttVersion box = MqttVersion5)
+  : MqttDecodeResultType[MqttPublishPacket val] val ? =>
     let dup_flag = _MqttDup.decode(header)
     let qos_level = _MqttQoSDecoder(header)
     let retain = _MqttRetain.decode(header)
     var consumed: USize val = 0
     (let topic_name: String val, let consumed1: USize val) = MqttUtf8String.decode(reader) ?
     consumed = consumed + consumed1
-    var packet_identifier: (U16 val | None) = None
+    var packet_identifier: U16 val = 0
     match qos_level
     | MqttQoS1 =>
       (let packet_identifier': U16 val, let consumed2: USize val) = MqttTwoByteInteger.decode(reader) ?
@@ -209,12 +222,12 @@ primitive MqttPublishDecoder
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
       var payload_format_indicator: (MqttPayloadFormatIndicatorType val | None) = None
-      var message_expiry_interval: (U32 | None) = None
-      var topic_alias: (U16 | None) = None
+      var message_expiry_interval: U32 = 0
+      var topic_alias: U16 = 0
       var response_topic: (String | None) = None
       var correlation_data: (Array[U8 val] val | None) = None
       var user_properties: Map[String val, String val] iso = recover iso Map[String val, String val] end
-      var subscription_identifier: (ULong | None) = None
+      var subscription_identifier: ULong = 0
       var content_type: (String | None) = None
       while decoded_length < property_length do
         let identifier = reader.u8() ?
@@ -296,15 +309,17 @@ primitive MqttPublishDecoder
     end
 
 primitive MqttPublishMeasurer
-  fun variable_header_size(data: MqttPublishPacket box, version: MqttVersion box = MqttVersion5): USize val =>
+  fun variable_header_size(
+    data: MqttPublishPacket box,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var size: USize = MqttUtf8String.size(data.topic_name)
-    match data.packet_identifier
-    | let packet_identifier': U16 box =>
+    if data.packet_identifier != 0 then
       match data.qos_level
       | MqttQoS1 =>
-        size = size + MqttTwoByteInteger.size(packet_identifier')
+        size = size + MqttTwoByteInteger.size(data.packet_identifier)
       | MqttQoS2 =>
-        size = size + MqttTwoByteInteger.size(packet_identifier')
+        size = size + MqttTwoByteInteger.size(data.packet_identifier)
       end
     end
     if \likely\ version() == MqttVersion5() then
@@ -313,7 +328,9 @@ primitive MqttPublishMeasurer
     end
     size
 
-  fun properties_size(data: MqttPublishPacket box): USize val =>
+  fun properties_size(
+    data: MqttPublishPacket box)
+  : USize val =>
     var size: USize val = 0
     size = size +
         match data.payload_format_indicator
@@ -323,16 +340,14 @@ primitive MqttPublishMeasurer
           0
         end
     size = size +
-        match data.message_expiry_interval
-        | let message_expiry_interval: U32 box =>
-          MqttMessageExpiryInterval.size(message_expiry_interval)
+        if data.message_expiry_interval != 0 then
+          MqttMessageExpiryInterval.size(data.message_expiry_interval)
         else
           0
         end
     size = size +
-        match data.topic_alias
-        | let topic_alias: U16 box =>
-          MqttTopicAlias.size(topic_alias)
+        if data.topic_alias != 0 then
+          MqttTopicAlias.size(data.topic_alias)
         else
           0
         end
@@ -359,9 +374,8 @@ primitive MqttPublishMeasurer
     end
 
     size = size +
-        match data.subscription_identifier
-        | let subscription_identifier: ULong box =>
-          MqttSubscriptionIdentifier.size(subscription_identifier)
+        if data.subscription_identifier != 0 then
+          MqttSubscriptionIdentifier.size(data.subscription_identifier)
         else
           0
         end
@@ -375,7 +389,9 @@ primitive MqttPublishMeasurer
 
     size
 
-  fun payload_size(data: MqttPublishPacket box): USize val =>
+  fun payload_size(
+    data: MqttPublishPacket box)
+  : USize val =>
     var size: USize = 0
     match data.payload
     | let payload: Array[U8] box =>
@@ -384,7 +400,10 @@ primitive MqttPublishMeasurer
     size
 
 primitive MqttPublishEncoder
-  fun apply(data: MqttPublishPacket box, version: MqttVersion box = MqttVersion5): Array[U8] val =>
+  fun apply(
+    data: MqttPublishPacket box,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8] val =>
     let remaining = (MqttPublishMeasurer.variable_header_size(data, version) + MqttPublishMeasurer.payload_size(data)).ulong()
 
     var buf = Array[U8](MqttVariableByteInteger.size(remaining) + remaining.usize() + 1)
@@ -394,13 +413,12 @@ primitive MqttPublishEncoder
 
     MqttUtf8String.encode(buf, data.topic_name)
 
-    match data.packet_identifier
-    | let packet_identifier: U16 box =>
+    if data.packet_identifier != 0 then
       match data.qos_level
       | MqttQoS1 =>
-        MqttTwoByteInteger.encode(buf, packet_identifier)
+        MqttTwoByteInteger.encode(buf, data.packet_identifier)
       | MqttQoS2 =>
-        MqttTwoByteInteger.encode(buf, packet_identifier)
+        MqttTwoByteInteger.encode(buf, data.packet_identifier)
       end
     end
 
@@ -413,14 +431,12 @@ primitive MqttPublishEncoder
         MqttPayloadFormatIndicator.encode(buf, payload_format_indicator)
       end
 
-      match data.message_expiry_interval
-      | let message_expiry_interval: U32 box =>
-        MqttMessageExpiryInterval.encode(buf, message_expiry_interval)
+      if data.message_expiry_interval != 0 then
+        MqttMessageExpiryInterval.encode(buf, data.message_expiry_interval)
       end
 
-      match data.topic_alias
-      | let topic_alias: U16 box =>
-        MqttTopicAlias.encode(buf, topic_alias)
+      if data.topic_alias != 0 then
+        MqttTopicAlias.encode(buf, data.topic_alias)
       end
 
       match data.response_topic
@@ -440,9 +456,8 @@ primitive MqttPublishEncoder
         end
       end
 
-      match data.subscription_identifier
-      | let subscription_identifier: ULong box =>
-        MqttSubscriptionIdentifier.encode(buf, subscription_identifier)
+      if data.subscription_identifier != 0 then
+        MqttSubscriptionIdentifier.encode(buf, data.subscription_identifier)
       end
 
       match data.content_type

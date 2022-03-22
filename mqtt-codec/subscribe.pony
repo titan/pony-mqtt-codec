@@ -64,7 +64,7 @@ class MqttSubscription
   * mqtt-5
   """
 
-  let retain_handling: (MqttRetainHandling val | None)
+  let retain_handling: MqttRetainHandling val
   """
   This option specifies whether retained messages are sent when the subscription
   is established. This does not affect the sending of retained messages at any
@@ -75,17 +75,17 @@ class MqttSubscription
   """
 
   new iso create(
-      topic_filter': String val,
-      qos_level': MqttQoS val,
-      no_local': Bool val = false,
-      retain_as_published': Bool val = false,
-      retain_handling': (MqttRetainHandling val | None) = None
-  ) =>
-      topic_filter = topic_filter'
-      qos_level = qos_level'
-      no_local = no_local'
-      retain_as_published = retain_as_published'
-      retain_handling = retain_handling'
+    topic_filter': String val,
+    qos_level': MqttQoS val,
+    no_local': Bool val = false,
+    retain_as_published': Bool val = false,
+    retain_handling': MqttRetainHandling val = MqttSendAtSubscribe)
+  =>
+    topic_filter = topic_filter'
+    qos_level = qos_level'
+    no_local = no_local'
+    retain_as_published = retain_as_published'
+    retain_handling = retain_handling'
 
 class MqttSubscribePacket
   let packet_identifier: U16 val
@@ -97,7 +97,7 @@ class MqttSubscribePacket
   * mqtt-3.1
   """
 
-  let subscription_identifier: (ULong val | None)
+  let subscription_identifier: ULong val
   """
   The Subscription Identifier is a Variable Byte Integer representing the
   identifier of the subscription.
@@ -125,7 +125,7 @@ class MqttSubscribePacket
   new iso create(
       packet_identifier': U16 val,
       subscriptions': Array[MqttSubscription val] val,
-      subscription_identifier': (ULong val | None) = None,
+      subscription_identifier': ULong val = 0,
       user_properties': (Map[String val, String val] val | None) = None
   ) =>
       packet_identifier = packet_identifier'
@@ -152,7 +152,7 @@ primitive MqttSubscribeDecoder
     remaining: box->USize)
   : MqttDecodeResultType[MqttSubscribePacket val] val ? =>
 
-    var subscription_identifier: (ULong | None) = None
+    var subscription_identifier: ULong = 0
     var user_properties: (Map[String val, String val] iso | None) = None
     var consumed: USize = 0
 
@@ -208,7 +208,7 @@ primitive MqttSubscribeDecoder
     var consumed: USize = 0
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
     consumed = consumed + consumed1
-    var subscription_identifier: (ULong | None) = None
+    var subscription_identifier: ULong = 0
     var subscriptions: Array[MqttSubscription val] iso = recover iso Array[MqttSubscription val] end
     while consumed < remaining do
       (let topic_filter: String, let consumed4) = MqttUtf8String.decode(reader) ?
@@ -227,7 +227,10 @@ primitive MqttSubscribeDecoder
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttSubscribeMeasurer
-  fun variable_header_size(data: MqttSubscribePacket box, version: MqttVersion box = MqttVersion5): USize val =>
+  fun variable_header_size(
+    data: MqttSubscribePacket box,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var size: USize = 0
     size = MqttTwoByteInteger.size(data.packet_identifier)
     if \likely\ version() == MqttVersion5() then
@@ -236,12 +239,13 @@ primitive MqttSubscribeMeasurer
     end
     size
 
-  fun properties_size(data: MqttSubscribePacket box): USize val =>
+  fun properties_size(
+    data: MqttSubscribePacket box)
+  : USize val =>
     var size: USize = 0
     size = size +
-        match data.subscription_identifier
-        | let subscription_identifier: ULong box =>
-          MqttSubscriptionIdentifier.size(subscription_identifier)
+        if data.subscription_identifier != 0 then
+          MqttSubscriptionIdentifier.size(data.subscription_identifier)
         else
           0
         end
@@ -255,7 +259,9 @@ primitive MqttSubscribeMeasurer
 
     size
 
-  fun payload_size(data: MqttSubscribePacket box): USize val =>
+  fun payload_size(
+    data: MqttSubscribePacket box)
+  : USize val =>
     var size: USize = 0
     for subscription in data.subscriptions.values() do
       size = size + MqttUtf8String.size(subscription.topic_filter)
@@ -264,11 +270,15 @@ primitive MqttSubscribeMeasurer
     size
 
 primitive MqttSubscriptionEncoder
-  fun apply(buf: Array[U8], data: MqttSubscription box, version: MqttVersion box = MqttVersion5): USize val =>
+  fun apply(
+    buf: Array[U8],
+    data: MqttSubscription box,
+    version: MqttVersion box = MqttVersion5)
+  : USize val =>
     var cnt: USize = MqttUtf8String.encode(buf, data.topic_filter)
     let option: U8 =
       if \likely\ version() == MqttVersion5() then
-        (try (data.retain_handling as MqttRetainHandling)() else MqttSendAtSubscribe() end) or ((if data.retain_as_published then 0x08 else 0 end) or ((if data.no_local then 0x04 else 0 end) or (data.qos_level() >> 1)))
+        data.retain_handling() or ((if data.retain_as_published then 0x08 else 0 end) or ((if data.no_local then 0x04 else 0 end) or (data.qos_level() >> 1)))
       else
         data.qos_level() >> 1
       end
@@ -277,7 +287,10 @@ primitive MqttSubscriptionEncoder
     cnt
 
 primitive MqttSubscribeEncoder
-  fun apply(data: MqttSubscribePacket box, version: MqttVersion box = MqttVersion5): Array[U8] val =>
+  fun apply(
+    data: MqttSubscribePacket box,
+    version: MqttVersion box = MqttVersion5)
+  : Array[U8] val =>
     let size = (MqttSubscribeMeasurer.variable_header_size(data, version) + MqttSubscribeMeasurer.payload_size(data)).ulong()
 
     var buf = Array[U8](MqttVariableByteInteger.size(size) + size.usize() + 1)
@@ -290,9 +303,8 @@ primitive MqttSubscribeEncoder
       let properties_length: USize = MqttSubscribeMeasurer.properties_size(data)
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
-      match data.subscription_identifier
-      | let subscription_identifier: ULong box =>
-        MqttSubscriptionIdentifier.encode(buf, subscription_identifier)
+      if data.subscription_identifier != 0 then
+        MqttSubscriptionIdentifier.encode(buf, data.subscription_identifier)
       end
 
       match data.user_properties

@@ -4,7 +4,7 @@ use "collections"
 type MqttAuthReasonCode is (MqttSuccess | MqttContinueAuthentication | MqttReauthenticate)
 
 class MqttAuthPacket
-  let reason_code: (MqttAuthReasonCode val | None)
+  let reason_code: MqttAuthReasonCode val
   """
   The Authenticate Reason Code
 
@@ -42,25 +42,29 @@ class MqttAuthPacket
   """
 
   new iso create(
-      reason_code': (MqttAuthReasonCode val | None) = None,
-      authentication_method': (String val | None) = None,
-      authentication_data': (Array[U8 val] val| None) = None,
-      reason_string': (String val | None) = None,
-      user_properties': (Map[String val, String val] val | None) = None
-  ) =>
-      reason_code = reason_code'
-      authentication_method = authentication_method'
-      authentication_data = authentication_data'
-      reason_string = reason_string'
-      user_properties = user_properties'
+    reason_code': MqttAuthReasonCode val = MqttSuccess,
+    authentication_method': (String val | None) = None,
+    authentication_data': (Array[U8 val] val| None) = None,
+    reason_string': (String val | None) = None,
+    user_properties': (Map[String val, String val] val | None) = None)
+  =>
+    reason_code = reason_code'
+    authentication_method = authentication_method'
+    authentication_data = authentication_data'
+    reason_string = reason_string'
+    user_properties = user_properties'
 
 class MqttAuthDecoder
-  fun apply(reader: Reader, header: U8 box, remaining: USize box): MqttDecodeResultType[MqttAuthPacket val] val ? =>
+  fun apply(
+    reader: Reader,
+    header: U8 box,
+    remaining: USize box)
+  : MqttDecodeResultType[MqttAuthPacket val] val ? =>
     var authentication_method: (String | None) = None
     var authentication_data: (Array[U8 val] val | None) = None
     var reason_string: (String | None) = None
     var user_properties: (Map[String val, String val] iso | None) = None
-    var reason_code: (MqttAuthReasonCode | None) = MqttSuccess
+    var reason_code: MqttAuthReasonCode = MqttSuccess
     if remaining > 0 then
       reason_code =
         match reader.u8() ?
@@ -68,7 +72,7 @@ class MqttAuthDecoder
         | MqttContinueAuthentication() => MqttContinueAuthentication
         | MqttReauthenticate() => MqttReauthenticate
         else
-          None
+          MqttSuccess
         end
       (let property_length', _) = MqttVariableByteInteger.decode_reader(reader) ?
       let property_length = property_length'.usize()
@@ -108,7 +112,10 @@ class MqttAuthDecoder
     (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
 
 primitive MqttAuthMeasurer
-  fun variable_header_size(data: MqttAuthPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
+  fun variable_header_size(
+    data: MqttAuthPacket box,
+    maximum_packet_size: USize box = 0)
+  : USize val =>
     """
     The Reason Code and Property Length can be omitted if the Reason Code is
     0x00 (Success) and there are no Properties. In this case the AUTH has a
@@ -116,21 +123,17 @@ primitive MqttAuthMeasurer
     """
     var size: USize = 0
     size = 1 // reason code
-    let properties_length = properties_size(data, try (maximum_packet_size as USize box) - size else None end)
-    if properties_length == 0 then
-      match data.reason_code
-      | let reason_code: MqttAuthReasonCode val =>
-        if reason_code() == MqttSuccess() then
-          return 0
-        end
-      else
-        return 0
-      end
+    let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size else 0 end)
+    if (properties_length == 0) and (data.reason_code() == MqttSuccess()) then
+      return 0
     end
     size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     size
 
-  fun properties_size(data: MqttAuthPacket box, maximum_packet_size: (USize box | None) = None): USize val =>
+  fun properties_size(
+    data: MqttAuthPacket box,
+    maximum_packet_size: USize box = 0)
+  : USize val =>
     var size: USize = 0
 
     size = size +
@@ -152,9 +155,8 @@ primitive MqttAuthMeasurer
     match data.reason_string
     | let reason_string': String box =>
       let length = MqttReasonString.size(reason_string')
-      match maximum_packet_size
-      | let maximum_packet_size': USize box =>
-        if maximum_packet_size' >= (size + length) then
+      if maximum_packet_size != 0 then
+        if maximum_packet_size >= (size + length) then
           size = size + length
         end
       else
@@ -164,11 +166,10 @@ primitive MqttAuthMeasurer
 
     match data.user_properties
     | let user_properties: Map[String val, String val] box =>
-      match maximum_packet_size
-      | let maximum_packet_size': USize box =>
+      if maximum_packet_size != 0 then
         for item in user_properties.pairs() do
           let item_size = MqttUserProperty.size(item)
-          if maximum_packet_size' >= (size + item_size) then
+          if maximum_packet_size >= (size + item_size) then
             size = size + item_size
           else
             break
@@ -184,12 +185,14 @@ primitive MqttAuthMeasurer
     size
 
 primitive MqttAuthEncoder
-  fun apply(data: MqttAuthPacket box, maximum_packet_size: (USize box | None) = None): Array[U8 val] val =>
-    var maximum_size: (USize | None) = None
+  fun apply(
+    data: MqttAuthPacket box,
+    maximum_packet_size: USize box = 0)
+  : Array[U8 val] val =>
+    var maximum_size: USize = 0
     var remaining: USize = 0
-    match maximum_packet_size
-    | let maximum_packet_size': USize box =>
-      var maximum: USize = maximum_packet_size' - 1 - 1
+    if maximum_packet_size != 0 then
+      var maximum: USize = maximum_packet_size - 1 - 1
       remaining = MqttAuthMeasurer.variable_header_size(data, maximum)
       var remaining_length = MqttVariableByteInteger.size(remaining.ulong())
       maximum = maximum - remaining_length
@@ -204,7 +207,7 @@ primitive MqttAuthEncoder
       until delta == 0 end
       maximum_size = maximum
     else
-      remaining = MqttAuthMeasurer.variable_header_size(data, None)
+      remaining = MqttAuthMeasurer.variable_header_size(data, 0)
     end
 
     let total_size = MqttVariableByteInteger.size(remaining.ulong()) + remaining + 1
@@ -216,12 +219,7 @@ primitive MqttAuthEncoder
 
     var properties_length: USize = MqttAuthMeasurer.properties_size(data, maximum_size)
     if properties_length > 0 then
-      match data.reason_code
-      | let reason_code: MqttAuthReasonCode =>
-        buf.push(reason_code())
-      else
-        buf.push(MqttSuccess())
-      end
+      buf.push(data.reason_code())
 
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
@@ -251,11 +249,8 @@ primitive MqttAuthEncoder
         end
       end
     else
-      match data.reason_code
-      | let reason_code: MqttAuthReasonCode box =>
-        if reason_code() != MqttSuccess() then
-          buf.push(reason_code())
-        end
+      if data.reason_code() != MqttSuccess() then
+        buf.push(data.reason_code())
       end
     end
 
