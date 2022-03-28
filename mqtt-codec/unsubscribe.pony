@@ -49,7 +49,7 @@ primitive MqttUnsubscribeDecoder
     (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
     consumed = consumed + consumed1
     var user_properties: (Map[String val, String val] iso | None) = None
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
       consumed = consumed + consumed2
       let property_length = property_length'.usize()
@@ -88,7 +88,7 @@ primitive MqttUnsubscribeMeasurer
   : USize val =>
     var size: USize = 0
     size = MqttTwoByteInteger.size(data.packet_identifier)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -131,7 +131,7 @@ primitive MqttUnsubscribeEncoder
     MqttVariableByteInteger.encode(buf, size)
     MqttTwoByteInteger.encode(buf, data.packet_identifier)
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length: USize = MqttUnsubscribeMeasurer.properties_size(data)
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 

@@ -66,7 +66,7 @@ primitive MqttUnsubAckDecoder
     var user_properties: (Map[String val, String val] iso | None) = None
     var reason_codes: (Array[MqttUnsubAckReasonCode val] iso | None) = None
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
       consumed = consumed + consumed2
       let property_length = property_length'.usize()
@@ -121,7 +121,7 @@ primitive MqttUnsubAckMeasurer
   : USize val =>
     var size: USize = 2 // packet identifier
     let payload_size' = payload_size(data, version)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size - payload_size' else 0 end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -170,7 +170,7 @@ primitive MqttUnsubAckMeasurer
     version: MqttVersion box = MqttVersion5)
   : USize val =>
     var size: USize = 0
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       match data.reason_codes
       | let reason_codes: Array[MqttUnsubAckReasonCode val] box =>
         size = reason_codes.size()
@@ -215,7 +215,7 @@ primitive MqttUnsubAckEncoder
     MqttVariableByteInteger.encode(buf, remaining.ulong())
     MqttTwoByteInteger.encode(buf, data.packet_identifier)
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       var properties_length: USize = MqttUnsubAckMeasurer.properties_size(data, maximum_size)
 
       MqttVariableByteInteger.encode(buf, properties_length.ulong())

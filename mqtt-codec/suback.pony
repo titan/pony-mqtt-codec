@@ -64,7 +64,7 @@ primitive MqttSubAckDecoder
     consumed = consumed1
     var reason_string: (String | None) = None
     var user_properties: (Map[String val, String val] iso | None) = None
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
       consumed = consumed + consumed2
       let property_length = property_length'.usize()
@@ -125,7 +125,7 @@ primitive MqttSubAckMeasurer
   : USize val =>
     var size: USize = 2 // packet identifier
     let payload_size' = payload_size(data)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size - payload_size' else 0 end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -212,7 +212,7 @@ primitive MqttSubAckEncoder
     MqttVariableByteInteger.encode(buf, remaining.ulong())
     MqttTwoByteInteger.encode(buf, data.packet_identifier)
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
 
       var properties_length: USize = MqttSubAckMeasurer.properties_size(data, maximum_size)
 

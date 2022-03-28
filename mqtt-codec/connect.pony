@@ -430,7 +430,7 @@ primitive MqttConnectDecoder
     var will_payload: (Array[U8 val] val | None) = None
     var user_name: (String val | None) = None
     var password: (Array[U8 val] val | None) = None
-    if \likely\ protocol_version() == MqttVersion5() then
+    if \likely\ protocol_version == MqttVersion5 then
       (let property_length', _) = MqttVariableByteInteger.decode_reader(reader) ?
       user_properties = recover iso Map[String val, String val] end
       let property_length = property_length'.usize()
@@ -480,7 +480,7 @@ primitive MqttConnectDecoder
     end
     (let client_identifier, _) = MqttUtf8String.decode(reader) ?
     if \unlikely\ will_flag then
-      if protocol_version() == MqttVersion5() then
+      if protocol_version == MqttVersion5 then
         (let will_property_length', _) = MqttVariableByteInteger.decode_reader(reader) ?
         let will_property_length = will_property_length'.usize()
         var will_decoded_length: USize = 0
@@ -580,7 +580,7 @@ primitive MqttConnectMeasurer
     version: MqttVersion box)
   : USize val =>
     var size: USize = 0
-    if \unlikely\ version() == MqttVersion31() then
+    if \unlikely\ version == MqttVersion31 then
       size = MqttUtf8String.size("MQisdp")
     else
       size = MqttUtf8String.size("MQTT")
@@ -588,7 +588,7 @@ primitive MqttConnectMeasurer
     size = size + 1 // protocol version
     size = size + 1 // flags
     size = size + MqttTwoByteInteger.size(data.keep_alive)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -601,7 +601,7 @@ primitive MqttConnectMeasurer
     var size: USize = 0
 
     let will_flag: Bool =
-      if \likely\ version() == MqttVersion5() then
+      if \likely\ version == MqttVersion5 then
         match (data.will_properties, data.will_topic, data.will_payload)
         | (None, _, _) => false
         | (_, None, _) => false
@@ -620,7 +620,7 @@ primitive MqttConnectMeasurer
 
     size = MqttUtf8String.size(data.client_identifier)
     if \unlikely\ will_flag then
-      if \likely\ version() == MqttVersion5() then
+      if \likely\ version == MqttVersion5 then
         let will_properties_length =
           match data.will_properties
           | let will_properties: MqttWillProperties box =>
@@ -793,7 +793,7 @@ primitive MqttConnectEncoder
         true
       end
     let will_flag: Bool =
-      if \likely\ version() == MqttVersion5() then
+      if \likely\ version == MqttVersion5 then
         match (data.will_properties, data.will_topic, data.will_payload)
         | (None, _, _) => false
         | (_, None, _) => false
@@ -814,7 +814,7 @@ primitive MqttConnectEncoder
 
     buf.push(MqttConnect() and 0xF0)
     MqttVariableByteInteger.encode(buf, size)
-    if \unlikely\ version() == MqttVersion31() then
+    if \unlikely\ version == MqttVersion31 then
       MqttUtf8String.encode(buf, "MQisdp")
     else
       MqttUtf8String.encode(buf, "MQTT")
@@ -823,7 +823,7 @@ primitive MqttConnectEncoder
     buf.push(MqttUserNameFlag.encode(user_name_flag) or (MqttPasswordFlag.encode(password_flag) or (MqttWillRetain.encode(data.will_retain) or (MqttWillQos.encode(data.will_qos) or (MqttWillFlag.encode(will_flag) or MqttCleanStart.encode(data.clean_start))))))
     MqttTwoByteInteger.encode(buf, data.keep_alive)
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       var properties_length: USize = MqttConnectMeasurer.properties_size(data)
 
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
@@ -873,7 +873,7 @@ primitive MqttConnectEncoder
     MqttUtf8String.encode(buf, data.client_identifier)
 
     if \unlikely\ will_flag then
-      if \likely\ version() == MqttVersion5() then
+      if \likely\ version == MqttVersion5 then
         match data.will_properties
         | \unlikely\ let will_properties: MqttWillProperties box =>
           let will_properties_length = MqttConnectMeasurer.will_properties_size(will_properties)

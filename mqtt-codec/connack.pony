@@ -215,7 +215,7 @@ primitive MqttConnAckDecoder
   : MqttDecodeResultType[MqttConnAckPacket val] val ? =>
     let flags = reader.u8() ?
     let session_present: Bool = (flags and 0x01) == 1
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       var reason_code: MqttConnectReasonCode val =
         match reader.u8() ?
         | MqttSuccess() => MqttSuccess
@@ -388,7 +388,7 @@ primitive MqttConnAckMeasurer
   : USize val =>
     var size: USize = 1 // flags
     size = size + 1 // reason code(mqtt-5) or return code (mqtt-3.1.1/mqtt-3.1)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size else 0 end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -562,7 +562,7 @@ primitive MqttConnAckEncoder
     buf.push(MqttConnAck() and 0xF0)
     MqttVariableByteInteger.encode(buf, remaining.ulong())
     buf.push(if data.session_present then 1 else 0 end)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       match data.reason_code
       | let reason_code: MqttConnectReasonCode =>
         buf.push(reason_code())

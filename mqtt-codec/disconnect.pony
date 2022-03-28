@@ -66,7 +66,7 @@ class MqttDisconnectDecoder
     var reason_string: (String | None) = None
     var user_properties: (Map[String, String] iso | None) = None
     var server_reference: (String | None) = None
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       if remaining < 1 then
         reason_code = MqttNormalDisconnection
       else
@@ -155,7 +155,7 @@ primitive MqttDisconnectMeasurer
     DISCONNECT has a Variable Header Size of 0.
     """
     var size: USize = 0
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       size = 1 // reason code
       let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size else 0 end)
       if properties_length == 0 then
@@ -254,7 +254,7 @@ primitive MqttDisconnectEncoder
     buf.push(MqttDisconnect() and 0xF0)
     MqttVariableByteInteger.encode(buf, remaining.ulong())
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       var properties_length: USize = MqttDisconnectMeasurer.properties_size(data, maximum_size)
 
       if (data.reason_code() == MqttNormalDisconnection()) and (properties_length == 0) then

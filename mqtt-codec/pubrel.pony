@@ -56,7 +56,7 @@ primitive MqttPubRelDecoder
     version: MqttVersion box = MqttVersion5)
   : MqttDecodeResultType[MqttPubRelPacket val] val ? =>
     (let packet_identifier: U16, _) = MqttTwoByteInteger.decode(reader) ?
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let reason_code: MqttPubRelReasonCode =
         match reader.u8() ?
         | MqttPacketIdentifierNotFound() => MqttPacketIdentifierNotFound
@@ -105,7 +105,7 @@ primitive MqttPubRelMeasurer
     version: MqttVersion box = MqttVersion5)
   : USize val =>
     var size: USize = 2 // packet identifier
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       size = size + 1 // reason code
       let properties_length = properties_size(data, if maximum_packet_size != 0 then maximum_packet_size - size else 0 end)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
@@ -185,7 +185,7 @@ primitive MqttPubRelEncoder
     MqttVariableByteInteger.encode(buf, remaining.ulong())
     MqttTwoByteInteger.encode(buf, data.packet_identifier)
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       buf.push(data.reason_code())
 
       var properties_length: USize = MqttPubRelMeasurer.properties_size(data, maximum_size)

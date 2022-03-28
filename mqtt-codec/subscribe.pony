@@ -140,7 +140,7 @@ primitive MqttSubscribeDecoder
     remaining: box->USize,
     version: MqttVersion box = MqttVersion5)
   : MqttDecodeResultType[MqttSubscribePacket val] val ? =>
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       _decode_5(reader, header, remaining) ?
     else
       _decode_3x(reader, header, remaining) ?
@@ -233,7 +233,7 @@ primitive MqttSubscribeMeasurer
   : USize val =>
     var size: USize = 0
     size = MqttTwoByteInteger.size(data.packet_identifier)
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -277,7 +277,7 @@ primitive MqttSubscriptionEncoder
   : USize val =>
     var cnt: USize = MqttUtf8String.encode(buf, data.topic_filter)
     let option: U8 =
-      if \likely\ version() == MqttVersion5() then
+      if \likely\ version == MqttVersion5 then
         data.retain_handling() or ((if data.retain_as_published then 0x08 else 0 end) or ((if data.no_local then 0x04 else 0 end) or (data.qos_level() >> 1)))
       else
         data.qos_level() >> 1
@@ -299,7 +299,7 @@ primitive MqttSubscribeEncoder
     MqttVariableByteInteger.encode(buf, size)
     MqttTwoByteInteger.encode(buf, data.packet_identifier)
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length: USize = MqttSubscribeMeasurer.properties_size(data)
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 

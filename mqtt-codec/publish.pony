@@ -216,7 +216,7 @@ primitive MqttPublishDecoder
       consumed = consumed + consumed2
     end
     var payload: (Array[U8 val] iso | None) = None
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       (let property_length': ULong val, let consumed3: USize val) = MqttVariableByteInteger.decode_reader(reader) ?
       consumed = consumed + consumed3
       let property_length = property_length'.usize()
@@ -322,7 +322,7 @@ primitive MqttPublishMeasurer
         size = size + MqttTwoByteInteger.size(data.packet_identifier)
       end
     end
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length = properties_size(data)
       size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
@@ -422,7 +422,7 @@ primitive MqttPublishEncoder
       end
     end
 
-    if \likely\ version() == MqttVersion5() then
+    if \likely\ version == MqttVersion5 then
       let properties_length: USize = MqttPublishMeasurer.properties_size(data)
       MqttVariableByteInteger.encode(buf, properties_length.ulong())
 
