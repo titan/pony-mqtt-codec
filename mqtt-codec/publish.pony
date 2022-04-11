@@ -158,6 +158,8 @@ class MqttPublishPacket
   content and format of the data is application specific.
 
   * mqtt-5
+  * mqtt-3.1.1
+  * mqtt-3.1
   """
 
   new iso create(

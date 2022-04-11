@@ -1,32 +1,70 @@
-primitive MqttQoS0
+interface val _MqttQoS is (Equatable[MqttQoS] & Stringable)
+
+primitive MqttQoS0 is _MqttQoS
   """
   At most once delivery
   """
   fun apply(): U8 val =>
     0x00
 
-primitive MqttQoS1
+  fun eq(
+    o: MqttQoS)
+  : Bool =>
+    o is this
+
+  fun string()
+  : String iso^ =>
+    "QoS0".clone()
+
+primitive MqttQoS1 is _MqttQoS
   """
   At least once delivery
   """
   fun apply(): U8 val =>
     0x02
 
-primitive MqttQoS2
+  fun eq(
+    o: MqttQoS)
+  : Bool =>
+    o is this
+
+  fun string()
+  : String iso^ =>
+    "QoS1".clone()
+
+primitive MqttQoS2 is _MqttQoS
   """
   Exactly once delivery
   """
   fun apply(): U8 val =>
     0x04
 
-primitive MqttQoSReserved
+  fun eq(
+    o: MqttQoS)
+  : Bool =>
+    o is this
+
+  fun string()
+  : String iso^ =>
+    "QoS2".clone()
+
+primitive MqttQoSReserved is _MqttQoS
   """
   Reserved - must not be used
   """
   fun apply(): U8 val =>
     0x06
 
-type MqttQoS is (MqttQoS0 | MqttQoS1 | MqttQoS2 | MqttQoSReserved)
+  fun eq(
+    o: MqttQoS)
+  : Bool =>
+    o is this
+
+  fun string()
+  : String iso^ =>
+    "QoSReserved".clone()
+
+type MqttQoS is ((MqttQoS0 | MqttQoS1 | MqttQoS2 | MqttQoSReserved) & _MqttQoS)
 
 primitive _MqttQoSEncoder
   fun apply(
