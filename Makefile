@@ -1,31 +1,37 @@
-include .config
-NAME-LINK = $(subst _,-,$(NAME))
+config ?= debug
 
-ESCAPED-BUILDDIR = $(shell echo '$(BUILDDIR)' | sed 's%/%\\/%g')
-TARGET = $(BUILDDIR)/$(NAME-LINK)
+ifdef config
+  ifeq (,$(filter $(config),debug release))
+    $(error Unknown configuration "$(config)")
+  endif
+endif
+
+ifeq ($(config),debug)
+    PONYC-FLAGS += --debug
+endif
+
+NAME = mqtt-codec
+BUILDDIR = /dev/shm/$(NAME)
+TARGET = $(BUILDDIR)/$(config)/test
 BUILDSCRIPTS = corral.json lock.json
-DSTSCRIPTS = $(BUILDSCRIPTS:%=$(BUILDDIR)/%)
-SRCDIR = mqtt-codec
+SRCDIR = $(NAME)
 SRCS = $(wildcard $(SRCDIR)/*.pony)
-DSTSRCS = $(subst $(SRCDIR),$(BUILDDIR),$(SRCS))
+
+PONYC ?= ponyc
+COMPILE-WITH := corral run -- $(PONYC)
+PONYC-FLAGS += -V1
 
 all: $(TARGET)
 
-$(TARGET): $(DSTSCRIPTS) $(DSTSRCS)
-	cd $(BUILDDIR); corral fetch; corral run -- ponyc; cd -
-
-$(DSTSCRIPTS): $(BUILDDIR)/%: % | prebuild
-	cp $< $@
-
-$(DSTSRCS): $(BUILDDIR)/%: $(SRCDIR)/% .config | prebuild
-	cp $< $@
+$(TARGET): $(SRCS)
+	$(COMPILE-WITH) $(PONYC-FLAGS) -o $(BUILDDIR)/$(config) --bin-name=test $(NAME)
 
 prebuild:
 ifeq "$(wildcard $(BUILDDIR))" ""
-	@mkdir -p $(BUILDDIR)
+	@mkdir -p $(BUILDDIR)/$(config)
 endif
 
 clean:
 	rm -rf $(BUILDDIR)
 
-.PHONY: all clean install prebuild test
+.PHONY: all clean prebuild
