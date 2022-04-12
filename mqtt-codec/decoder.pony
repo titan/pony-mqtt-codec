@@ -6,16 +6,20 @@ primitive MqttDecodeContinue
 
 primitive MqttDecodeError
 
-type MqttDecodeResultType[A] is ((MqttDecodeDone, A, (Array[U8 val] val | None)) | (MqttDecodeContinue, Array[U8 val] val) | (MqttDecodeError, String val, Array[U8 val] val))
+type MqttDecodeResultType[A] is
+  ( (MqttDecodeDone, A, (Array[U8 val] val | None))
+  | (MqttDecodeContinue, Array[U8 val] val)
+  | (MqttDecodeError, String val, Array[U8 val] val)
+  )
 
 primitive MqttDecoder
   fun apply(
     data: Array[U8 val] val,
     version: MqttVersion box = MqttVersion5)
   : MqttDecodeResultType[MqttControlPacketType val] val ? =>
-    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(data, 1) ? else (0, 0) end
+    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(data, 1) ? else (0, 1) end
     let remaining': USize = remaining.usize()
-    if remaining' > ((data.size() - 1) - remainlen) then
+    if remaining'.isize() > ((data.size() - 1) - remainlen).isize() then
       return (MqttDecodeContinue, data)
     end
     let reader = Reader

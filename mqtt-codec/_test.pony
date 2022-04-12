@@ -14,6 +14,7 @@ actor Main is TestList
     test(_TestFourByteInteger)
     test(_TestVariableByteInteger)
     test(_TestBinaryData)
+    test(_TestDecoder)
     test(_TestConnect)
     test(_TestConnAck)
     test(_TestPublish)
