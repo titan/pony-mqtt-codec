@@ -1,150 +1,172 @@
-use "buffered"
 use "collections"
 
-class MqttUnsubscribePacket
-  let packet_identifier: U16 val
-  """
-  The Packet Identifier field.
+type MqttUnSubscribePacket is
+  ( U16 // 1. packet_identifier
+  , (Array[MqttUserProperty] val | None) // 2. user_properties
+  , Array[String val] val // 3. topic_filters
+  )
 
-  * mqtt-5
-  * mqtt-3.1.1
-  * mqtt-3.1
+primitive MqttUnSubscribe
   """
+  UnSubscribe request.
 
-  let user_properties: (Map[String val, String val] val | None)
+  Direction: Client to Server.
   """
-  User Properties on the SUBSCRIBE packet can be used to send subscription
-  related properties from the Client to the Server.
+  fun apply(): U8 =>
+    0xA0
 
-  * mqtt-5
-  """
+  fun packet_identifier(
+    packet: MqttUnSubscribePacket)
+  : U16 =>
+    """
+    The Packet Identifier field.
 
-  let topic_filters: Array[String val] val
-  """
-  It contains the list of Topic Filters that the Client wishes to unsubscribe
-  from.
+    * mqtt-5
+    * mqtt-3.1.1
+    * mqtt-3.1
+    """
+    packet._1
 
-  * mqtt-5
-  * mqtt-3.1.1
-  * mqtt-3.1
-  """
+  fun user_properties(
+    packet: MqttUnSubscribePacket)
+  : (Array[MqttUserProperty] val | None) =>
+    """
+    User Properties on the SUBSCRIBE packet can be used to send subscription
+    related properties from the Client to the Server.
 
-  new iso create(
-    packet_identifier': U16 val,
+    * mqtt-5
+    """
+    packet._2
+
+  fun topic_filters(
+    packet: MqttUnSubscribePacket)
+  : Array[String val] val =>
+    """
+    It contains the list of Topic Filters that the Client wishes to unsubscribe
+    from.
+
+    * mqtt-5
+    * mqtt-3.1.1
+    * mqtt-3.1
+    """
+    packet._3
+
+  fun build(
+    packet_identifier': U16,
     topic_filters': Array[String val] val,
-    user_properties': (Map[String val, String val] val | None) = None)
-  =>
-    packet_identifier = packet_identifier'
-    topic_filters = topic_filters'
-    user_properties = user_properties'
+    user_properties': (Array[MqttUserProperty] val | None) = None)
+  : MqttUnSubscribePacket =>
+    ( packet_identifier'
+    , user_properties'
+    , topic_filters'
+    )
 
-primitive MqttUnsubscribeDecoder
+primitive _MqttUnSubscribeDecoder
   fun apply(
-    reader: Reader,
-    header: U8 box,
-    remaining: box->USize,
-    version: MqttVersion box = MqttVersion5)
-  : MqttDecodeResultType[MqttUnsubscribePacket val] val ? =>
-    var consumed: USize = 0
-    (let packet_identifier: U16, let consumed1: USize) = MqttTwoByteInteger.decode(reader) ?
-    consumed = consumed + consumed1
-    var user_properties: (Map[String val, String val] iso | None) = None
+    buf: Array[U8] val,
+    offset: USize = 0,
+    limit: USize = 0,
+    header: U8 = MqttUnSubscribe(),
+    version: MqttVersion = MqttVersion5)
+  : MqttUnSubscribePacket? =>
+    var offset' = offset
+    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+    offset' = offset' + packet_identifier_size
+    var user_properties: (Array[MqttUserProperty] iso | None) = None
     if \likely\ version == MqttVersion5 then
-      (let property_length', let consumed2: USize) = MqttVariableByteInteger.decode_reader(reader) ?
-      consumed = consumed + consumed2
+      (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset')?
+      offset' = offset' + property_length_size
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
-      user_properties = recover iso Map[String val, String val] end
+      user_properties = recover iso Array[MqttUserProperty] end
       while decoded_length < property_length do
-        let identifier = reader.u8() ?
+        let identifier = buf(offset' + decoded_length)?
         decoded_length = decoded_length + 1
         match identifier
-        | MqttUserProperty() =>
-          (let user_property', let consumed3) = MqttUserProperty.decode(reader) ?
-          try (user_properties as Map[String val, String val] iso).insert(user_property'._1, user_property'._2) end
-          decoded_length = decoded_length + consumed3
+        | _MqttUserProperty() =>
+          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+          try (user_properties as Array[MqttUserProperty] iso).push(consume user_property) end
+          decoded_length = decoded_length + user_property_size
         end
       end
-      consumed = consumed + property_length
+      offset' = offset' + decoded_length
     end
     var topic_filters: Array[String val] iso = recover iso Array[String val] end
-    while consumed < remaining do
-      (let topic_filter: String, let consumed4) = MqttUtf8String.decode(reader) ?
-      consumed = consumed + consumed4
-      topic_filters.push(topic_filter)
+    while offset' < limit do
+      (let topic_filter: String iso, let topic_filter_size) = _MqttUtf8String.decode(buf, offset')?
+      offset' = offset' + topic_filter_size
+      topic_filters.push(consume topic_filter)
     end
-    let packet =
-      MqttUnsubscribePacket(
-        packet_identifier,
-        consume topic_filters,
-        consume user_properties
-      )
-    (MqttDecodeDone, packet, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
+    MqttUnSubscribe.build(
+      packet_identifier,
+      consume topic_filters,
+      consume user_properties
+    )
 
-primitive MqttUnsubscribeMeasurer
+primitive _MqttUnSubscribeMeasurer
   fun variable_header_size(
-    data: MqttUnsubscribePacket box,
-    version: MqttVersion box = MqttVersion5)
-  : USize val =>
+    packet: MqttUnSubscribePacket,
+    version: MqttVersion = MqttVersion5)
+  : USize =>
     var size: USize = 0
-    size = MqttTwoByteInteger.size(data.packet_identifier)
+    size = _MqttTwoByteInteger.size(MqttUnSubscribe.packet_identifier(packet))
     if \likely\ version == MqttVersion5 then
-      let properties_length = properties_size(data)
-      size = size + MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
+      let properties_length = properties_size(packet)
+      size = size + _MqttVariableByteInteger.size(properties_length.ulong()) + properties_length
     end
     size
 
   fun properties_size(
-    data: MqttUnsubscribePacket box)
-  : USize val =>
+    packet: MqttUnSubscribePacket)
+  : USize =>
     var size: USize = 0
 
-    match data.user_properties
-    | let user_properties: Map[String val, String val] box =>
-      for item in user_properties.pairs() do
-        size = size + MqttUserProperty.size(item)
+    match MqttUnSubscribe.user_properties(packet)
+    | let user_properties: Array[MqttUserProperty] val =>
+      for property in user_properties.values() do
+        size = size + _MqttUserProperty.size(property)
       end
     end
 
     size
 
   fun payload_size(
-    data: MqttUnsubscribePacket box)
-  : USize val =>
+    packet: MqttUnSubscribePacket)
+  : USize =>
     var size: USize = 0
-    for topic_filter in data.topic_filters.values() do
-      size = size + MqttUtf8String.size(topic_filter)
+    for topic_filter in MqttUnSubscribe.topic_filters(packet).values() do
+      size = size + _MqttUtf8String.size(topic_filter)
     end
     size
 
-primitive MqttUnsubscribeEncoder
+primitive _MqttUnSubscribeEncoder
   fun apply(
-    data: MqttUnsubscribePacket box,
-    version: MqttVersion box = MqttVersion5)
-  : Array[U8 val] val =>
-    let size = (MqttUnsubscribeMeasurer.variable_header_size(data, version) + MqttUnsubscribeMeasurer.payload_size(data)).ulong()
+    packet: MqttUnSubscribePacket,
+    version: MqttVersion = MqttVersion5)
+  : Array[U8] iso^ =>
+    let size = (_MqttUnSubscribeMeasurer.variable_header_size(packet, version) + _MqttUnSubscribeMeasurer.payload_size(packet)).ulong()
 
-    var buf = Array[U8 val](MqttVariableByteInteger.size(size) + size.usize() + 1)
+    var buf = recover iso Array[U8](_MqttVariableByteInteger.size(size) + size.usize() + 1) end
 
-    buf.push(MqttUnsubscribe() or 0x02)
+    buf.push((MqttUnSubscribe() and 0xF0) or 0x02)
 
-    MqttVariableByteInteger.encode(buf, size)
-    MqttTwoByteInteger.encode(buf, data.packet_identifier)
+    buf = _MqttVariableByteInteger.encode(consume buf, size)
+    buf = _MqttTwoByteInteger.encode(consume buf, MqttUnSubscribe.packet_identifier(packet))
 
     if \likely\ version == MqttVersion5 then
-      let properties_length: USize = MqttUnsubscribeMeasurer.properties_size(data)
-      MqttVariableByteInteger.encode(buf, properties_length.ulong())
+      let properties_length: USize = _MqttUnSubscribeMeasurer.properties_size(packet)
+      buf = _MqttVariableByteInteger.encode(consume buf, properties_length.ulong())
 
-      match data.user_properties
-      | let user_properties: Map[String val, String val] box =>
-        for item in user_properties.pairs() do
-          MqttUserProperty.encode(buf, item)
+      match MqttUnSubscribe.user_properties(packet)
+      | let user_properties: Array[MqttUserProperty] box =>
+        for property in user_properties.values() do
+          buf = _MqttUserProperty.encode(consume buf, property)
         end
       end
     end
 
-    for item in data.topic_filters.values() do
-      MqttUtf8String.encode(buf, item)
+    for property in MqttUnSubscribe.topic_filters(packet).values() do
+      buf = _MqttUtf8String.encode(consume buf, property)
     end
 
-    U8ArrayClone(buf)
+    consume buf

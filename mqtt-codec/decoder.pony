@@ -1,5 +1,3 @@
-use "buffered"
-
 primitive MqttDecodeDone
 
 primitive MqttDecodeContinue
@@ -7,56 +5,74 @@ primitive MqttDecodeContinue
 primitive MqttDecodeError
 
 type MqttDecodeResultType[A] is
-  ( (MqttDecodeDone, A, (Array[U8 val] val | None))
-  | (MqttDecodeContinue, Array[U8 val] val)
-  | (MqttDecodeError, String val, Array[U8 val] val)
+  ( (MqttDecodeDone, A, (Array[U8] iso^ | None))
+  | MqttDecodeContinue
+  | (MqttDecodeError, String val)
   )
 
 primitive MqttDecoder
   fun apply(
-    data: Array[U8 val] val,
-    version: MqttVersion box = MqttVersion5)
-  : MqttDecodeResultType[MqttControlPacketType val] val ? =>
-    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(data, 1) ? else (0, 1) end
+    data: Array[U8] val,
+    version: MqttVersion = MqttVersion5)
+  : MqttDecodeResultType[MqttControlType]? =>
+    let datasize: USize = data.size()
+    (let remaining, let remain_size) = try _MqttVariableByteInteger.decode(data, 1)? else (0, 1) end
     let remaining': USize = remaining.usize()
-    if remaining'.isize() > ((data.size() - 1) - remainlen).isize() then
-      return (MqttDecodeContinue, data)
+    match remaining'.isize() - (datasize - 1 - remain_size).isize()
+    | let x: ISize if x > 0 =>
+      return MqttDecodeContinue
+    | let x: ISize if x == 0 =>
+      let header = data(0)?
+      let limit = datasize
+      _dispatch(data, 1 + remain_size, limit, header, None, version)?
+    else
+      let header = data(0)?
+      let limit = 1 + remaining' + remain_size
+      let remained_size = datasize - limit
+      let remained: Array[U8] iso = recover iso Array[U8](remained_size) end
+      remained.copy_from(data, limit, 0, remained_size)
+      _dispatch(data, 1 + remain_size, limit, header, consume remained, version)?
     end
-    let reader = Reader
-    reader.append(data)
-    let header = reader.u8() ?
-    reader.skip(remainlen) ?
+
+  fun _dispatch(
+    buf: Array[U8] val,
+    offset: USize = 0,
+    limit: USize = 0,
+    header: U8 = 0,
+    remained: (Array[U8] iso | None) = None,
+    version: MqttVersion = MqttVersion5)
+  : MqttDecodeResultType[MqttControlType]? =>
     match (header and 0xF0)
     | MqttConnect() =>
-      MqttConnectDecoder(consume reader, header, remaining') ?
+      (MqttDecodeDone, (MqttConnect, _MqttConnectDecoder(consume buf, offset, limit, header)?), remained)
     | MqttConnAck() =>
-      MqttConnAckDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttConnAck, _MqttConnAckDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttPublish() =>
-      MqttPublishDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttPublish, _MqttPublishDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttPubAck() =>
-      MqttPubAckDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttPubAck, _MqttPubAckDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttPubRec() =>
-      MqttPubRecDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttPubRec, _MqttPubRecDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttPubRel() =>
-      MqttPubRelDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttPubRel, _MqttPubRelDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttPubComp() =>
-      MqttPubCompDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttPubComp, _MqttPubCompDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttSubscribe() =>
-      MqttSubscribeDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttSubscribe, _MqttSubscribeDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttSubAck() =>
-      MqttSubAckDecoder(consume reader, header, remaining', version) ?
-    | MqttUnsubscribe() =>
-      MqttUnsubscribeDecoder(consume reader, header, remaining', version) ?
-    | MqttUnsubAck() =>
-      MqttUnsubAckDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttSubAck, _MqttSubAckDecoder(consume buf, offset, limit, header, version)?), remained)
+    | MqttUnSubscribe() =>
+      (MqttDecodeDone, (MqttUnSubscribe, _MqttUnSubscribeDecoder(consume buf, offset, limit, header, version)?), remained)
+    | MqttUnSubAck() =>
+      (MqttDecodeDone, (MqttUnSubAck, _MqttUnSubAckDecoder(consume buf, offset, limit, header, version)?), remained)
     | MqttPingReq() =>
-      (MqttDecodeDone, MqttPingReqPacket, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
+      (MqttDecodeDone, (MqttPingReq, None), remained)
     | MqttPingResp() =>
-      (MqttDecodeDone, MqttPingRespPacket, if reader.size() > 0 then reader.block(reader.size()) ? else None end)
+      (MqttDecodeDone, (MqttPingResp, None), remained)
     | MqttDisconnect() =>
-      MqttDisconnectDecoder(consume reader, header, remaining', version) ?
+      (MqttDecodeDone, (MqttDisconnect, _MqttDisconnectDecoder(consume buf, offset, limit,  header, version)?), remained)
     | MqttAuth() =>
-      MqttAuthDecoder(consume reader, header, remaining') ?
+      (MqttDecodeDone, (MqttAuth, _MqttAuthDecoder(consume buf, offset, limit, header)?), remained)
     else
-      (MqttDecodeError, "Unknown control packet type: " + (header and 0xF0).string(), reader.block(reader.size()) ?)
+      (MqttDecodeError, "Unknown control packet type: " + (header and 0xF0).string())
     end

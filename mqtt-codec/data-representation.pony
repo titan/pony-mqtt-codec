@@ -1,102 +1,96 @@
-use "buffered"
-use "collections"
-
-primitive MqttUtf8String
+primitive _MqttUtf8String
   fun decode(
-    reader: Reader)
-  : (String val, USize val) ? =>
-    let msb = reader.u8()?.usize()
-    let lsb = reader.u8()?.usize()
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    let msb = buf(offset)?.usize()
+    let lsb = buf(offset + 1)?.usize()
     let len = (msb << 8) or lsb
-    let buf: Array[U8] iso = recover iso Array[U8](len) end
-    var idx: USize = 0
-    while idx < len do
-      buf.push(reader.u8() ?)
-      idx = idx + 1
-    end
-    (String.from_iso_array(consume buf), 2 + len)
+    let data: Array[U8] iso = recover iso Array[U8](len) end
+    data.copy_from(buf, offset + 2, 0, len)
+    (String.from_iso_array(consume data), 2 + len)
 
   fun encode(
-    buf: Array[U8],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     let size' = data.size() and 0xFFFF
     let msb = (size' >> 8).u8()
     let lsb = (size' and 0xFF).u8()
     buf.push(msb)
     buf.push(lsb)
-    for chr in data.values() do
-      buf.push(chr)
-    end
-    2 + size'
+    buf.append(data)
+    consume buf
 
   fun size(
     data: String box)
-  : USize val =>
+  : USize =>
     2 + (data.size() and 0xFFFF)
 
-primitive MqttUtf8StringPair
+primitive _MqttUtf8StringPair
   fun decode(
-    reader: Reader)
-  : ((String val, String val), USize val) ? =>
-    (let key, let key_consumed) = MqttUtf8String.decode(reader) ?
-    (let value, let value_consumed) = MqttUtf8String.decode(reader) ?
-    ((key, value), key_consumed + value_consumed)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : ((String iso^, String iso^), USize)? =>
+    (let key, let key_consumed) = _MqttUtf8String.decode(buf, offset)?
+    (let value, let value_consumed) = _MqttUtf8String.decode(buf, offset + key_consumed)?
+    ((consume key, consume value), key_consumed + value_consumed)
 
   fun encode(
-    buf: Array[U8 val],
-    data: (String box, String box))
-  : USize val =>
+    buf: Array[U8] iso,
+    data: (String val, String val))
+  : Array[U8] iso^ =>
     let key = data._1
     let value = data._2
-    let size1 = MqttUtf8String.encode(buf, key)
-    let size2 = MqttUtf8String.encode(buf, value)
-    size1 + size2
+    let buf1 = _MqttUtf8String.encode(consume buf, key)
+    _MqttUtf8String.encode(consume buf1, value)
 
   fun size(
-    data: (String box, String box))
-  : USize val =>
+    data: (String val, String val))
+  : USize =>
     let key = data._1
     let value = data._2
-    MqttUtf8String.size(key) + MqttUtf8String.size(value)
+    _MqttUtf8String.size(key) + _MqttUtf8String.size(value)
 
-primitive MqttTwoByteInteger
+primitive _MqttTwoByteInteger
   fun decode(
-    reader: Reader)
-  : (U16 val, USize val) ? =>
-    let msb = reader.u8()?.u16()
-    let lsb = reader.u8()?.u16()
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U16, USize) ? =>
+    let msb = buf(offset)?.u16()
+    let lsb = buf(offset + 1)?.u16()
     ((msb << 8) or lsb, 2)
 
   fun encode(
-    buf: Array[U8 val],
-    data: U16 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U16)
+  : Array[U8] iso^ =>
     let msb = ((data >> 8) and 0xFF).u8()
     let lsb = (data and 0xFF).u8()
     buf.push(msb)
     buf.push(lsb)
-    2
+    consume buf
 
   fun size(
-    data: U16 box)
-  : USize val =>
+    data: U16)
+  : USize =>
     2
 
-primitive MqttFourByteInteger
+primitive _MqttFourByteInteger
   fun decode(
-    reader: Reader)
-  : (U32 val, USize val) ? =>
-    let mmsb = reader.u8()?.u32()
-    let mlsb = reader.u8()?.u32()
-    let lmsb = reader.u8()?.u32()
-    let llsb = reader.u8()?.u32()
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U32, USize) ? =>
+    let mmsb = buf(offset)?.u32()
+    let mlsb = buf(offset + 1)?.u32()
+    let lmsb = buf(offset + 2)?.u32()
+    let llsb = buf(offset + 3)?.u32()
     ((((mmsb << 24) or (mlsb << 16)) or (lmsb << 8)) or llsb, 4)
 
   fun encode(
-    buf: Array[U8 val],
-    data: U32 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U32)
+  : Array[U8] iso^ =>
     let mmsb = ((data >> 24) and 0xFF).u8()
     let mlsb = ((data >> 16) and 0xFF).u8()
     let lmsb = ((data >> 8) and 0xFF).u8()
@@ -105,14 +99,14 @@ primitive MqttFourByteInteger
     buf.push(mlsb)
     buf.push(lmsb)
     buf.push(llsb)
-    4
+    consume buf
 
   fun size(
-    data: U32 box)
-  : USize val =>
+    data: U32)
+  : USize =>
     4
 
-primitive MqttVariableByteInteger
+primitive _MqttVariableByteInteger
   """
   The Variable Byte Integer is encoded using an encoding scheme which uses a
   single byte for values up to 127. Larger values are handled as follows. The
@@ -122,28 +116,10 @@ primitive MqttVariableByteInteger
   The maximum number of bytes in the Variable Byte Integer field is four.
   """
 
-  fun encode(
-    buf: Array[U8 val],
-    data: ULong box)
-  : USize val =>
-    var x = data
-    var idx: USize = 0
-    var y: U8 = 0
-    repeat
-      y = x.u8() and 0x7F
-      x = x >> 7
-      if x > 0 then
-        y = y or 0x80
-      end
-      buf.push(y)
-      idx = idx + 1
-    until x == 0 end
-    idx
-
-  fun decode_array(
+  fun decode(
     buf: Array[U8] val,
-    offset: box->USize = 0)
-  : (ULong val, USize val) ? =>
+    offset: USize = 0)
+  : (ULong, USize) ? =>
     var x: ULong = 0
     var idx: USize = offset
     var byte: U8
@@ -159,27 +135,27 @@ primitive MqttVariableByteInteger
     until (byte and 0x80) == 0 end
     (x, idx - offset)
 
-  fun decode_reader(
-    reader: Reader)
-  : (ULong val, USize val) ? =>
-    var x: ULong = 0
+  fun encode(
+    buf: Array[U8] iso,
+    data: ULong)
+  : Array[U8] iso^ =>
+    var x = data
     var idx: USize = 0
-    var byte: U8
-    var multiplier: ULong = 0
+    var y: U8 = 0
     repeat
-      byte = reader.u8() ?
-      x = x + ((byte and 0x7F).ulong() << multiplier)
-      if multiplier > 21 then
-        error
+      y = x.u8() and 0x7F
+      x = x >> 7
+      if x > 0 then
+        y = y or 0x80
       end
-      multiplier = multiplier + 7
+      buf.push(y)
       idx = idx + 1
-    until (byte and 0x80) == 0 end
-    (x, idx)
+    until x == 0 end
+    consume buf
 
   fun size(
-    data: ULong box)
-  : USize val =>
+    data: ULong)
+  : USize =>
     if data < 128 then
       1
     elseif data < 16_384 then
@@ -190,34 +166,31 @@ primitive MqttVariableByteInteger
       4
     end
 
-primitive MqttBinaryData
+primitive _MqttBinaryData
   fun decode(
-    reader: Reader)
-  : (Array[U8 val] val, USize val) ? =>
-    (let len, let consumed) = MqttTwoByteInteger.decode(reader)?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Array[U8] iso^, USize) ? =>
+    (let len, let consumed) = _MqttTwoByteInteger.decode(buf, offset)?
     let len' = len.usize()
-    let buf = recover iso Array[U8](len') end
-    var idx: USize = 0
-    while idx < len' do
-      buf.push(reader.u8() ?)
-      idx = idx + 1
-    end
-    (consume buf, consumed + len')
+    let data = recover iso Array[U8](len') end
+    data.copy_from(buf, offset + consumed, 0, len')
+    (consume data, consumed + len')
 
   fun encode(
-    buf: Array[U8 val],
-    data: Array[U8 val] box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Array[U8] val)
+  : Array[U8] iso^ =>
     let size' = data.size() and 0xFFFF
     let msb = (size' >> 8).u8()
     let lsb = (size' and 0xFF).u8()
     buf.push(msb)
     buf.push(lsb)
     buf.copy_from(data, 0, buf.size(), size')
-    size' + 2
+    consume buf
 
   fun size(
-    data: Array[U8 val] box)
-  : USize val =>
+    data: Array[U8] val)
+  : USize =>
     let size' = data.size() and 0xFFFF
     size' + 2

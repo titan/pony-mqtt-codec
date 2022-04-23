@@ -1,4 +1,4 @@
-interface val _MqttVersion is (Equatable[MqttVersion] & Stringable)
+interface val _MqttVersion is (Equatable[_MqttVersion] & Stringable)
 
 primitive MqttVersion5 is _MqttVersion
   """
@@ -9,7 +9,7 @@ primitive MqttVersion5 is _MqttVersion
     5
 
   fun eq(
-    o: MqttVersion)
+    o: _MqttVersion)
   : Bool =>
     o is this
 
@@ -25,7 +25,7 @@ primitive MqttVersion311 is _MqttVersion
     4
 
   fun eq(
-    o: MqttVersion)
+    o: _MqttVersion)
   : Bool =>
     o is this
 
@@ -41,7 +41,7 @@ primitive MqttVersion31 is _MqttVersion
     3
 
   fun eq(
-    o: MqttVersion)
+    o: _MqttVersion)
   : Bool =>
     o is this
 
@@ -49,4 +49,5 @@ primitive MqttVersion31 is _MqttVersion
   : String iso^ =>
     recover iso String(3).>append("3.1") end
 
-type MqttVersion is ((MqttVersion5 | MqttVersion311 | MqttVersion31) & _MqttVersion)
+//type MqttVersion is ((MqttVersion5 | MqttVersion311 | MqttVersion31) & _MqttVersion)
+type MqttVersion is (MqttVersion5 | MqttVersion311 | MqttVersion31)

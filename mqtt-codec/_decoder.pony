@@ -1,5 +1,4 @@
 use "pony_test"
-use "buffered"
 use "collections"
 
 class _TestDecoder is UnitTest
@@ -9,9 +8,9 @@ class _TestDecoder is UnitTest
     _test_empty(h) ?
 
   fun _test_empty(h: TestHelper) ? =>
-    match MqttDecoder(recover val Array[U8 val] end) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
+    match MqttDecoder(recover iso Array[U8 val] end) ?
+    | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Expect MqttDecodeContinue but got MqttDecodeDone")
-    | (MqttDecodeError, let err: String val, _) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail("Expect MqttDecodeContinue but got MqttDecodeError" + err)
     end

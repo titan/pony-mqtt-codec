@@ -1,3 +1,3 @@
-primitive MqttPingRespPacket
-  fun encode(): Array[U8] val =>
-    [MqttPingResp(); 0]
+primitive _MqttPingRespEncoder
+  fun apply(): Array[U8] iso^=>
+    recover iso [MqttPingResp(); 0] end

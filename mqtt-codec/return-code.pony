@@ -7,28 +7,79 @@ this table.
 Mqtt-3.1.1 and Mqtt-3.1 only
 """
 
-primitive MqttConnectionAccepted
+interface val _MqttReturnCode is (Equatable[_MqttReturnCode] & Stringable)
+
+primitive MqttConnectionAccepted is _MqttReturnCode
   fun apply(): U8 val =>
     0x00
 
-primitive MqttUnacceptableProtocolVersion
+  fun eq(
+    o: _MqttReturnCode)
+  : Bool =>
+    o is this
+
+  fun string(): String iso^ => "MqttConnectionAccepted".clone()
+
+primitive MqttUnacceptableProtocolVersion is _MqttReturnCode
   fun apply(): U8 val =>
     0x01
 
-primitive MqttIdentifierRejected
+  fun eq(
+    o: _MqttReturnCode)
+  : Bool =>
+    o is this
+
+  fun string(): String iso^ => "MqttUnacceptableProtocolVersion".clone()
+
+primitive MqttIdentifierRejected is _MqttReturnCode
   fun apply(): U8 val =>
     0x02
 
-primitive MqttServerUnavailable
+  fun eq(
+    o: _MqttReturnCode)
+  : Bool =>
+    o is this
+
+  fun string(): String iso^ => "MqttIdentifierRejected".clone()
+
+primitive MqttServerUnavailable is _MqttReturnCode
   fun apply(): U8 val =>
     0x03
 
-primitive MqttBadUserNameOrPassword
+  fun eq(
+    o: _MqttReturnCode)
+  : Bool =>
+    o is this
+
+  fun string(): String iso^ => "MqttServerUnavailable".clone()
+
+primitive MqttBadUserNameOrPassword is _MqttReturnCode
   fun apply(): U8 val =>
     0x04
 
-primitive MqttNotAuthorized
+  fun eq(
+    o: _MqttReturnCode)
+  : Bool =>
+    o is this
+
+  fun string(): String iso^ => "MqttBadUserNameOrPassword".clone()
+
+primitive MqttNotAuthorized is _MqttReturnCode
   fun apply(): U8 val =>
     0x05
 
-type MqttConnectReturnCode is (MqttConnectionAccepted | MqttUnacceptableProtocolVersion | MqttIdentifierRejected | MqttServerUnavailable | MqttBadUserNameOrPassword | MqttNotAuthorized)
+  fun eq(
+    o: _MqttReturnCode)
+  : Bool =>
+    o is this
+
+  fun string(): String iso^ => "MqttNotAuthorized".clone()
+
+type MqttConnectReturnCode is
+  ( MqttConnectionAccepted
+  | MqttUnacceptableProtocolVersion
+  | MqttIdentifierRejected
+  | MqttServerUnavailable
+  | MqttBadUserNameOrPassword
+  | MqttNotAuthorized
+  )

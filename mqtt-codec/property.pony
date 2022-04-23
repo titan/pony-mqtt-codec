@@ -1,690 +1,694 @@
-use "buffered"
-
 primitive MqttUnspecifiedBytes
-  fun apply(): U8 val =>
-    0x00
+  fun apply(): U8 => 0x00
 
 primitive MqttCharacterData
-  fun apply(): U8 val =>
-    0x01
+  fun apply(): U8 => 0x01
 
 type MqttPayloadFormatIndicatorType is (MqttUnspecifiedBytes | MqttCharacterData)
 
-primitive MqttPayloadFormatIndicator
+primitive _MqttPayloadFormatIndicator
   """
   PUBLISH, Will Properties
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x01
 
   fun decode(
-    reader: Reader)
-  : (MqttPayloadFormatIndicatorType val, USize val) ? =>
-    if reader.u8() ? == MqttCharacterData() then
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (MqttPayloadFormatIndicatorType, USize)? =>
+    if buf(offset)? == MqttCharacterData() then
       (MqttCharacterData, 1)
     else
       (MqttUnspecifiedBytes, 1)
     end
 
   fun encode(
-    buf: Array[U8 val],
-    data: MqttPayloadFormatIndicatorType box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: MqttPayloadFormatIndicatorType)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(data())
-    2
+    consume buf
 
   fun size(
-    data: MqttPayloadFormatIndicatorType box)
-  : USize val =>
+    data: MqttPayloadFormatIndicatorType)
+  : USize =>
     2
 
-primitive MqttMessageExpiryInterval
+primitive _MqttMessageExpiryInterval
   """
   PUBLISH, Will Properties
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x02
 
   fun decode(
-    reader: Reader)
-  : (U32 val, USize val) ? =>
-    MqttFourByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U32, USize)? =>
+    _MqttFourByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U32 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U32)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttFourByteInteger.encode(buf, data)
-    1 + size'
+    _MqttFourByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U32 box)
-  : USize val =>
-    1 + MqttFourByteInteger.size(data)
+    data: U32)
+  : USize =>
+    1 + _MqttFourByteInteger.size(data)
 
-primitive MqttContentType
+primitive _MqttContentType
   """
   PUBLISH, Will Properties
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x03
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttResponseTopic
+primitive _MqttResponseTopic
   """
   PUBLISH, Will Properties
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x08
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttCorrelationData
+primitive _MqttCorrelationData
   """
   PUBLISH, Will Properties
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x09
 
   fun decode(
-    reader: Reader)
-  : (Array[U8 val] val, USize val) ? =>
-    MqttBinaryData.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Array[U8] iso^, USize)? =>
+    _MqttBinaryData.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: Array[U8 val] box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Array[U8] val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttBinaryData.encode(buf, data)
-    1 + size'
+    _MqttBinaryData.encode(consume buf, data)
 
   fun size(
-    data: Array[U8 val] box)
-  : USize val =>
-    1 + MqttBinaryData.size(data)
+    data: Array[U8] val)
+  : USize =>
+    1 + _MqttBinaryData.size(data)
 
-primitive MqttSubscriptionIdentifier
+primitive _MqttSubscriptionIdentifier
   """
   PUBLISH, SUBSCRIBE
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x0B
 
   fun decode(
-    reader: Reader)
-  : (ULong, USize) ? =>
-    MqttVariableByteInteger.decode_reader(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (ULong, USize)? =>
+    _MqttVariableByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: ULong box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: ULong)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttVariableByteInteger.encode(buf, data)
-    1 + size'
+    _MqttVariableByteInteger.encode(consume buf, data)
 
   fun size(
-    data: ULong box)
-  : USize val =>
-    1 + MqttVariableByteInteger.size(data)
+    data: ULong)
+  : USize =>
+    1 + _MqttVariableByteInteger.size(data)
 
-primitive MqttSessionExpiryInterval
+primitive _MqttSessionExpiryInterval
   """
   CONNECT, CONNACK, DISCONNECT
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x11
 
   fun decode(
-    reader: Reader)
-  : (U32 val, USize val) ? =>
-    MqttFourByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U32, USize)? =>
+    _MqttFourByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U32 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U32)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttFourByteInteger.encode(buf, data)
-    1 + size'
+    _MqttFourByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U32 box)
-  : USize val =>
-    1 + MqttFourByteInteger.size(data)
+    data: U32)
+  : USize =>
+    1 + _MqttFourByteInteger.size(data)
 
-primitive MqttAssignedClientIdentifier
+primitive _MqttAssignedClientIdentifier
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x12
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf,  offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttServerKeepAlive
+primitive _MqttServerKeepAlive
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x13
 
   fun decode(
-    reader: Reader)
-  : (U16 val, USize val) ? =>
-    MqttTwoByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U16, USize)? =>
+    _MqttTwoByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U16 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U16)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttTwoByteInteger.encode(buf, data)
-    1 + size'
+    _MqttTwoByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U16 box)
-  : USize val =>
-    1 + MqttTwoByteInteger.size(data)
+    data: U16)
+  : USize =>
+    1 + _MqttTwoByteInteger.size(data)
 
-primitive MqttAuthenticationMethod
+primitive _MqttAuthenticationMethod
   """
   CONNECT, CONNACK, AUTH
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x15
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttAuthenticationData
+primitive _MqttAuthenticationData
   """
   CONNECT, CONNACK, AUTH
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x16
 
   fun decode(
-    reader: Reader)
-  : (Array[U8 val] val, USize val) ? =>
-    MqttBinaryData.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Array[U8] iso^, USize)? =>
+    _MqttBinaryData.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: Array[U8 val] box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Array[U8] val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttBinaryData.encode(buf, data)
-    1 + size'
+    _MqttBinaryData.encode(consume buf, data)
 
   fun size(
-    data: Array[U8 val] box)
-  : USize val =>
-    1 + MqttBinaryData.size(data)
+    data: Array[U8] val)
+  : USize =>
+    1 + _MqttBinaryData.size(data)
 
-primitive MqttRequestProblemInformation
+primitive _MqttRequestProblemInformation
   """
   CONNECT
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x17
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2
 
-primitive MqttWillDelayInterval
+primitive _MqttWillDelayInterval
   """
   Will Properties
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x18
 
   fun decode(
-    reader: Reader)
-  : (U32 val, USize val) ? =>
-    MqttFourByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U32, USize)? =>
+    _MqttFourByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U32 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U32)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttFourByteInteger.encode(buf, data)
-    1 + size'
+    _MqttFourByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U32 box)
-  : USize val =>
-    1 + MqttFourByteInteger.size(data)
+    data: U32)
+  : USize =>
+    1 + _MqttFourByteInteger.size(data)
 
-primitive MqttRequestResponseInformation
+primitive _MqttRequestResponseInformation
   """
   CONNECT
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x19
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2
 
-primitive MqttResponseInformation
+primitive _MqttResponseInformation
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x1A
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttServerReference
+primitive _MqttServerReference
   """
   CONNACK, DISCONNECT
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x1C
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttReasonString
+primitive _MqttReasonString
   """
   CONNACK, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBACK, UNSUBACK, DISCONNECT, AUTH
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x1F
 
   fun decode(
-    reader: Reader)
-  : (String, USize) ? =>
-    MqttUtf8String.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (String iso^, USize)? =>
+    _MqttUtf8String.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: String box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: String val)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8String.encode(buf, data)
-    1 + size'
+    _MqttUtf8String.encode(consume buf, data)
 
   fun size(
-    data: String box)
-  : USize val =>
-    1 + MqttUtf8String.size(data)
+    data: String val)
+  : USize =>
+    1 + _MqttUtf8String.size(data)
 
-primitive MqttReceiveMaximum
+primitive _MqttReceiveMaximum
   """
   CONNECT, CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x21
 
   fun decode(
-    reader: Reader)
-  : (U16 val, USize val) ? =>
-    MqttTwoByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U16, USize)? =>
+    _MqttTwoByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U16 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U16)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttTwoByteInteger.encode(buf, data)
-    1 + size'
+    _MqttTwoByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U16 box)
-  : USize val =>
-    1 + MqttTwoByteInteger.size(data)
+    data: U16)
+  : USize =>
+    1 + _MqttTwoByteInteger.size(data)
 
-primitive MqttTopicAliasMaximum
+primitive _MqttTopicAliasMaximum
   """
   CONNECT, CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x22
 
   fun decode(
-    reader: Reader)
-  : (U16 val, USize val) ? =>
-    MqttTwoByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U16, USize)? =>
+    _MqttTwoByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U16 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U16)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttTwoByteInteger.encode(buf, data)
-    1 + size'
+    _MqttTwoByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U16 box)
-  : USize val =>
-    1 + MqttTwoByteInteger.size(data)
+    data: U16)
+  : USize =>
+    1 + _MqttTwoByteInteger.size(data)
 
-primitive MqttTopicAlias
+primitive _MqttTopicAlias
   """
   PUBLISH
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x23
 
   fun decode(
-    reader: Reader)
-  : (U16 val, USize val) ? =>
-    MqttTwoByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U16, USize)? =>
+    _MqttTwoByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: U16 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U16)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttTwoByteInteger.encode(buf, data)
-    1 + size'
+    _MqttTwoByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U16 box)
-  : USize val =>
-    1 + MqttTwoByteInteger.size(data)
+    data: U16)
+  : USize =>
+    1 + _MqttTwoByteInteger.size(data)
 
-primitive MqttMaximumQoS
+primitive _MqttMaximumQoS
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x24
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2
 
-primitive MqttRetainAvailable
+primitive _MqttRetainAvailable
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x25
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2
 
-primitive MqttUserProperty
+primitive _MqttUserProperty
   """
   CONNECT, CONNACK, PUBLISH, Will Properties, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, DISCONNECT, AUTH
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x26
 
   fun decode(
-    reader: Reader)
-  : ((String val, String val), USize val) ? =>
-    MqttUtf8StringPair.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : ((String iso^, String iso^), USize)? =>
+    _MqttUtf8StringPair.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-    data: (String box, String box))
-  : USize val =>
+    buf: Array[U8] iso,
+    data: (String val, String val))
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttUtf8StringPair.encode(buf, data)
-    1 + size'
+    _MqttUtf8StringPair.encode(consume buf, data)
 
   fun size(
-    data: (String box, String box))
-  : USize val =>
-    1 + MqttUtf8StringPair.size(data)
+    data: (String val, String val))
+  : USize =>
+    1 + _MqttUtf8StringPair.size(data)
 
-primitive MqttMaximumPacketSize
+primitive _MqttMaximumPacketSize
   """
   CONNECT, CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x27
 
   fun decode(
-    reader: Reader)
-  : (U32 val, USize val) ? =>
-    MqttFourByteInteger.decode(reader) ?
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (U32, USize)? =>
+    _MqttFourByteInteger.decode(buf, offset)?
 
   fun encode(
-    buf: Array[U8 val],
-        data: U32 box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: U32)
+  : Array[U8] iso^ =>
     buf.push(apply())
-    let size' = MqttFourByteInteger.encode(buf, data)
-    1 + size'
+    _MqttFourByteInteger.encode(consume buf, data)
 
   fun size(
-    data: U32 box)
-  : USize val =>
-    1 + MqttFourByteInteger.size(data)
+    data: U32)
+  : USize =>
+    1 + _MqttFourByteInteger.size(data)
 
-primitive MqttWildcardSubscriptionAvailable
+primitive _MqttWildcardSubscriptionAvailable
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x28
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2
 
-primitive MqttSubscriptionIdentifierAvailable
+primitive _MqttSubscriptionIdentifierAvailable
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x29
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2
 
-primitive MqttSharedSubscriptionAvailable
+primitive _MqttSharedSubscriptionAvailable
   """
   CONNACK
   """
-  fun apply(): U8 val =>
+  fun apply(): U8 =>
     0x2A
 
   fun decode(
-    reader: Reader)
-  : (Bool val, USize val) ? =>
-    (reader.u8() ? == 1, 1)
+    buf: Array[U8] val,
+    offset: USize = 0)
+  : (Bool, USize)? =>
+    (buf(offset)? == 1, 1)
 
   fun encode(
-    buf: Array[U8 val],
-    data: Bool box)
-  : USize val =>
+    buf: Array[U8] iso,
+    data: Bool)
+  : Array[U8] iso^ =>
     buf.push(apply())
     buf.push(if data then 1 else 0 end)
-    2
+    consume buf
 
   fun size(
-    data: Bool box)
-  : USize val =>
+    data: Bool)
+  : USize =>
     2

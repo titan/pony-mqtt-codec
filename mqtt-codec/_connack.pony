@@ -1,5 +1,4 @@
 use "pony_test"
-use "buffered"
 use "collections"
 
 class _TestConnAck is UnitTest
@@ -11,110 +10,104 @@ class _TestConnAck is UnitTest
     _test_mqtt5_too_large(h) ?
 
   fun _test_mqtt311(h: TestHelper) ? =>
-    let origin = MqttConnAckPacket(
+    let origin = MqttConnAck.build(
       where
       session_present' = true,
-      return_code' = MqttConnectionAccepted
+      return_code' = MqttConnectionAccepted,
+      reason_code' = MqttUnsupportedProtocolVersion
     )
 
-    let buf = MqttConnAck.encode(consume origin, 0, MqttVersion311)
-    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
+    let buf = MqttEncoder.connack(consume origin, 0, MqttVersion311)
+    let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
-    match MqttDecoder(buf, MqttVersion311) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
-      match packet
-      | let pkt: MqttConnAckPacket val =>
-        h.assert_eq[Bool val](pkt.session_present, true)
-        try h.assert_eq[U8 val]((pkt.return_code as MqttConnectReturnCode)(), MqttConnectionAccepted()) else h.fail("Expect return-code to be 0 but got None") end
-      else
-        h.fail("Encoded packet is not CONNACK")
-      end
-    | (MqttDecodeContinue, _) =>
+    match MqttDecoder(consume buf, MqttVersion311) ?
+    | (MqttDecodeDone, (MqttConnAck, let pkt: MqttConnAckPacket), _) =>
+      h.assert_eq[Bool](MqttConnAck.session_present(pkt), true)
+      h.assert_eq[MqttConnectReturnCode](MqttConnAck.return_code(pkt), MqttConnectionAccepted)
+    | (MqttDecodeDone, _, _) =>
+      h.fail("Encoded packet is not CONNACK")
+    | MqttDecodeContinue =>
       h.fail("Encoded CONNACK packet is not completed")
-    | (MqttDecodeError, let err: String val, _) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail(err)
     end
 
   fun _test_mqtt5(h: TestHelper) ? =>
     let origin = _mqtt5_packet()
-    let buf = MqttConnAck.encode(origin)
-    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
+    let buf = MqttEncoder.connack(consume origin)
+    let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
-    match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
-      match packet
-      | let pkt: MqttConnAckPacket val =>
-        h.assert_eq[Bool val](pkt.session_present, true)
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttConnectReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be 0 but got None") end
-        h.assert_eq[U32 val](pkt.session_expiry_interval, 10)
-        h.assert_eq[U16 val](pkt.receive_maximum, 65535)
-        h.assert_eq[Bool val](pkt.maximum_qos, true)
-        h.assert_eq[U32 val](pkt.maximum_packet_size, 65535)
-        try h.assert_eq[String val](pkt.assigned_client_identifier as String, "identifier") else h.fail("Expect assigned-client-identifier to be identifier but got None") end
-        h.assert_eq[U16 val](pkt.topic_alias_maximum, 65535)
-        try h.assert_eq[String val](pkt.reason_string as String, "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
-        try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 2) else h.fail("Expect 2 items in user-properties") end
-        try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("foo")?, "bar") else h.fail("Expect foo in user-properties to be bar") end
-        try h.assert_eq[String val]((pkt.user_properties as Map[String val, String val] val)("hello")?, "world") else h.fail("Expect hello in user-properties to be world") end
-        h.assert_eq[Bool val](pkt.wildcard_subscription_available, true)
-        h.assert_eq[Bool val](pkt.subscription_identifier_available, true)
-        h.assert_eq[Bool val](pkt.shared_subscription_available, true)
-        h.assert_eq[U16 val](pkt.server_keep_alive, 65535)
-        try h.assert_eq[String val](pkt.server_reference as String, "server-reference") else h.fail("Expect server-reference to be server-reference but got None") end
-        try h.assert_eq[String val](pkt.authentication_method as String, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
-        try h.assert_array_eq[U8 val](pkt.authentication_data as Array[U8 val] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
-      else
-        h.fail("Encoded packet is not CONNACK")
-      end
-    | (MqttDecodeContinue, _) =>
+    match MqttDecoder(consume buf) ?
+    | (MqttDecodeDone, (MqttConnAck, let pkt: MqttConnAckPacket), _) =>
+      h.assert_eq[Bool](MqttConnAck.session_present(pkt), true)
+      h.assert_eq[MqttConnectReasonCode](MqttConnAck.reason_code(pkt), MqttSuccess)
+      h.assert_eq[U32](MqttConnAck.session_expiry_interval(pkt), 10)
+      h.assert_eq[U16](MqttConnAck.receive_maximum(pkt), 65535)
+      h.assert_eq[Bool](MqttConnAck.maximum_qos(pkt), true)
+      h.assert_eq[U32](MqttConnAck.maximum_packet_size(pkt), 65535)
+      try h.assert_eq[String val](MqttConnAck.assigned_client_identifier(pkt) as String, "identifier") else h.fail("Expect assigned-client-identifier to be identifier but got None") end
+      h.assert_eq[U16](MqttConnAck.topic_alias_maximum(pkt), 65535)
+      try h.assert_eq[String val](MqttConnAck.reason_string(pkt) as String, "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
+      try _TestUtils.assert_user_properties_eq(h, (MqttConnAck.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar"); ("hello", "world")]) else h.fail("Expect [(\"foo\", \"bar\"), (\"hello\", \"world\")], but got None") end
+      h.assert_eq[Bool](MqttConnAck.wildcard_subscription_available(pkt), true)
+      h.assert_eq[Bool](MqttConnAck.subscription_identifier_available(pkt), true)
+      h.assert_eq[Bool](MqttConnAck.shared_subscription_available(pkt), true)
+      h.assert_eq[U16](MqttConnAck.server_keep_alive(pkt), 65535)
+      try h.assert_eq[String val](MqttConnAck.server_reference(pkt) as String, "server-reference") else h.fail("Expect server-reference to be server-reference but got None") end
+      try h.assert_eq[String val](MqttConnAck.authentication_method(pkt) as String, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
+      try h.assert_array_eq[U8](MqttConnAck.authentication_data(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
+    | (MqttDecodeDone, _, _) =>
+      h.fail("Encoded packet is not CONNACK")
+    | MqttDecodeContinue =>
       h.fail("Encoded CONNACK packet is not completed")
-    | (MqttDecodeError, let err: String val, _) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail(err)
     end
 
   fun _test_mqtt5_too_large(h: TestHelper) ? =>
     let origin = _mqtt5_packet()
     let maximum_packet_size: USize = 125
-    let buf = MqttConnAck.encode(origin, maximum_packet_size)
-    (let remaining, let remainlen) = try MqttVariableByteInteger.decode_array(buf, 1) ? else (0, 0) end
+    let buf = MqttEncoder.connack(origin, maximum_packet_size)
+    let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
-    match MqttDecoder(buf) ?
-    | (MqttDecodeDone, let packet: MqttControlPacketType val, _) =>
-      match packet
-      | let pkt: MqttConnAckPacket val =>
-        h.assert_eq[Bool val](pkt.session_present, true)
-        try h.assert_eq[U8 val]((pkt.reason_code as MqttConnectReasonCode)(), MqttSuccess()) else h.fail("Expect reason-code to be 0 but got None") end
-        h.assert_eq[U32 val](pkt.session_expiry_interval, 10)
-        h.assert_eq[U16 val](pkt.receive_maximum, 65535)
-        h.assert_eq[Bool val](pkt.maximum_qos, true)
-        h.assert_eq[U32 val](pkt.maximum_packet_size, 65535)
-        try h.assert_eq[String val](pkt.assigned_client_identifier as String val, "identifier") else h.fail("Expect assigned-client-identifier to be identifier but got None") end
-        h.assert_eq[U16 val](pkt.topic_alias_maximum, 65535)
-        try h.assert_eq[String val](pkt.reason_string as String val, "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
-        try h.assert_eq[USize val]((pkt.user_properties as Map[String val, String val] val).size(), 1) else h.fail("Expect 1 items in user-properties") end
-        h.assert_eq[Bool val](pkt.wildcard_subscription_available, true)
-        h.assert_eq[Bool val](pkt.subscription_identifier_available, true)
-        h.assert_eq[Bool val](pkt.shared_subscription_available, true)
-        h.assert_eq[U16 val](pkt.server_keep_alive, 65535)
-        try h.assert_eq[String val](pkt.server_reference as String val, "server-reference") else h.fail("Expect server-reference to be server-reference but got None") end
-        try h.assert_eq[String val](pkt.authentication_method as String val, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
-        try h.assert_array_eq[U8 val](pkt.authentication_data as Array[U8 val] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
-      else
-        h.fail("Encoded packet is not CONNACK")
-      end
-    | (MqttDecodeContinue, _) =>
+    match MqttDecoder(consume buf) ?
+    | (MqttDecodeDone, (MqttConnAck, let pkt: MqttConnAckPacket), _) =>
+      h.assert_eq[Bool](MqttConnAck.session_present(pkt), true)
+      h.assert_eq[MqttConnectReasonCode](MqttConnAck.reason_code(pkt), MqttSuccess)
+      h.assert_eq[U32](MqttConnAck.session_expiry_interval(pkt), 10)
+      h.assert_eq[U16](MqttConnAck.receive_maximum(pkt), 65535)
+      h.assert_eq[Bool](MqttConnAck.maximum_qos(pkt), true)
+      h.assert_eq[U32](MqttConnAck.maximum_packet_size(pkt), 65535)
+      try h.assert_eq[String val](MqttConnAck.assigned_client_identifier(pkt) as String val, "identifier") else h.fail("Expect assigned-client-identifier to be identifier but got None") end
+      h.assert_eq[U16](MqttConnAck.topic_alias_maximum(pkt), 65535)
+      try h.assert_eq[String val](MqttConnAck.reason_string(pkt) as String val, "Unknown") else h.fail("Expect reason-string to be Unknown but got None") end
+      try _TestUtils.assert_user_properties_eq(h, (MqttConnAck.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar")]) else h.fail("Expect [(\"foo\", \"bar\")], but got None") end
+      h.assert_eq[Bool](MqttConnAck.wildcard_subscription_available(pkt), true)
+      h.assert_eq[Bool](MqttConnAck.subscription_identifier_available(pkt), true)
+      h.assert_eq[Bool](MqttConnAck.shared_subscription_available(pkt), true)
+      h.assert_eq[U16](MqttConnAck.server_keep_alive(pkt), 65535)
+      try h.assert_eq[String val](MqttConnAck.server_reference(pkt) as String val, "server-reference") else h.fail("Expect server-reference to be server-reference but got None") end
+      try h.assert_eq[String val](MqttConnAck.authentication_method(pkt) as String val, "Plain") else h.fail("Expect authentication-method to be Plain but got None") end
+      try h.assert_array_eq[U8](MqttConnAck.authentication_data(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
+    | (MqttDecodeDone, _, _) =>
+      h.fail("Encoded packet is not CONNACK")
+    | MqttDecodeContinue =>
       h.fail("Encoded CONNACK packet is not completed")
-    | (MqttDecodeError, let err: String val, _) =>
+    | (MqttDecodeError, let err: String val) =>
       h.fail(err)
     end
 
   fun _mqtt5_packet(): MqttConnAckPacket =>
-    let user_properties: Map[String val, String val] iso = recover iso Map[String val, String val](2) end
-    user_properties("foo") = "bar"
-    user_properties("hello") = "world"
-    MqttConnAckPacket(
+    let user_properties: Array[MqttUserProperty] iso = recover iso Array[MqttUserProperty](2) end
+    user_properties.push(("foo", "bar"))
+    user_properties.push(("hello", "world"))
+    MqttConnAck.build(
       where
       session_present' = true,
+      return_code' = MqttUnacceptableProtocolVersion,
       reason_code' = MqttSuccess,
       session_expiry_interval' = 10,
       receive_maximum' = 65535,
