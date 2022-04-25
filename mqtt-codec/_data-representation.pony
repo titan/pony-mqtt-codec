@@ -11,7 +11,7 @@ class _TestUtf8String is UnitTest
   fun _test_string(h: TestHelper, str: String val) ? =>
     var buf: Array[U8] iso = recover iso Array[U8](_MqttUtf8String.size(str)) end
     buf = _MqttUtf8String.encode(consume buf, str)
-    (let result, _) = _MqttUtf8String.decode(consume buf, 0) ?
+    (let result, _) = _MqttUtf8String.decode(consume buf, 0, _MqttUtf8String.size(str)) ?
     h.assert_eq[String val](consume result, str)
 
 class _TestUtf8StringPair is UnitTest
@@ -26,7 +26,7 @@ class _TestUtf8StringPair is UnitTest
   fun _test_string_pair(h: TestHelper, pair: (String val, String val)) ? =>
     var buf: Array[U8] iso = recover iso Array[U8](_MqttUtf8StringPair.size(pair)) end
     buf = _MqttUtf8StringPair.encode(consume buf, pair)
-    (let result, _) = _MqttUtf8StringPair.decode(consume buf, 0) ?
+    (let result, _) = _MqttUtf8StringPair.decode(consume buf, 0, _MqttUtf8StringPair.size(pair)) ?
     (let key, let value) = consume result
     h.assert_eq[String val](consume key, pair._1)
     h.assert_eq[String val](consume value, pair._2)
@@ -42,7 +42,7 @@ class _TestTwoByteInteger is UnitTest
   fun _test_two_byte_integer(h: TestHelper, data: U16) ? =>
     var buf: Array[U8] iso = recover iso Array[U8](_MqttTwoByteInteger.size(data)) end
     buf = _MqttTwoByteInteger.encode(consume buf, data)
-    (let result, _) = _MqttTwoByteInteger.decode(consume buf, 0) ?
+    (let result, _) = _MqttTwoByteInteger.decode(consume buf, 0, _MqttTwoByteInteger.size(data)) ?
     h.assert_eq[U16](consume result, data)
 
 class _TestFourByteInteger is UnitTest
@@ -57,7 +57,7 @@ class _TestFourByteInteger is UnitTest
   fun _test_four_byte_integer(h: TestHelper, data: U32) ? =>
     var buf: Array[U8] iso = recover iso Array[U8](_MqttFourByteInteger.size(data)) end
     buf = _MqttFourByteInteger.encode(consume buf, data)
-    (let result, _) = _MqttFourByteInteger.decode(consume buf, 0) ?
+    (let result, _) = _MqttFourByteInteger.decode(consume buf, 0, _MqttFourByteInteger.size(data)) ?
     h.assert_eq[U32](consume result, data)
 
 class _TestVariableByteInteger is UnitTest
@@ -74,11 +74,11 @@ class _TestVariableByteInteger is UnitTest
   fun _test_array(h: TestHelper, data: ULong) ? =>
     var buf: Array[U8] iso = recover iso Array[U8](_MqttVariableByteInteger.size(data)) end
     buf = _MqttVariableByteInteger.encode(consume buf, data)
-    (let result: ULong, _) = _MqttVariableByteInteger.decode(consume buf, 0) ?
+    (let result: ULong, _) = _MqttVariableByteInteger.decode(consume buf, 0, _MqttVariableByteInteger.size(data)) ?
     h.assert_eq[ULong](consume result, data)
 
   fun _test_direct(h: TestHelper, buf: Array[U8] val, offset: USize, expected: ULong) ? =>
-    (let result, _) = _MqttVariableByteInteger.decode(buf, offset) ?
+    (let result, _) = _MqttVariableByteInteger.decode(buf, offset, buf.size()) ?
     h.assert_eq[ULong](consume result, expected)
 
 class _TestBinaryData is UnitTest
@@ -92,5 +92,5 @@ class _TestBinaryData is UnitTest
     let len = _MqttBinaryData.size(data)
     var buf: Array[U8] iso = recover iso Array[U8](len) end
     buf = _MqttBinaryData.encode(consume buf, data)
-    (let result, _) = _MqttBinaryData.decode(consume buf, 0) ?
+    (let result, _) = _MqttBinaryData.decode(consume buf, 0, len) ?
     h.assert_array_eq[U8](consume result, data)

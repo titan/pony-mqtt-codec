@@ -25,7 +25,7 @@ class _TestSubAck is UnitTest
 
     let buf = MqttEncoder.suback(consume origin, 0, MqttVersion311)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf, MqttVersion311)?
     | (MqttDecodeDone, (MqttSubAck, let pkt: MqttSubAckPacket), _) =>
@@ -37,7 +37,7 @@ class _TestSubAck is UnitTest
       h.assert_eq[U8](MqttSubAck.reason_codes(pkt)(3)?(), MqttUnspecifiedError())
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not SUBACK")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded SUBACK packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -48,7 +48,7 @@ class _TestSubAck is UnitTest
 
     let buf = MqttEncoder.suback(origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttSubAck, let pkt: MqttSubAckPacket), _) =>
@@ -62,7 +62,7 @@ class _TestSubAck is UnitTest
       try _TestUtils.assert_user_properties_eq(h, (MqttSubAck.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar"); ("hello", "world")]) else h.fail("Expect [(\"foo\", \"bar\"), (\"hello\", \"world\")], but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not SUBACK")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded SUBACK packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -73,7 +73,7 @@ class _TestSubAck is UnitTest
 
     let buf = MqttEncoder.suback(origin, 35)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttSubAck, let pkt: MqttSubAckPacket), _) =>
@@ -87,7 +87,7 @@ class _TestSubAck is UnitTest
       try _TestUtils.assert_user_properties_eq(h, (MqttSubAck.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar")]) else h.fail("Expect [(\"foo\", \"bar\")], but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not SUBACK")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded SUBACK packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

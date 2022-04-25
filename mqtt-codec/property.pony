@@ -15,8 +15,12 @@ primitive _MqttPayloadFormatIndicator
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (MqttPayloadFormatIndicatorType, USize)? =>
+    if offset >= limit then
+      error
+    end
     if buf(offset)? == MqttCharacterData() then
       (MqttCharacterData, 1)
     else
@@ -45,9 +49,10 @@ primitive _MqttMessageExpiryInterval
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U32, USize)? =>
-    _MqttFourByteInteger.decode(buf, offset)?
+    _MqttFourByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -70,9 +75,10 @@ primitive _MqttContentType
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf, offset)?
+    _MqttUtf8String.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -95,9 +101,10 @@ primitive _MqttResponseTopic
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf, offset)?
+    _MqttUtf8String.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -120,9 +127,10 @@ primitive _MqttCorrelationData
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Array[U8] iso^, USize)? =>
-    _MqttBinaryData.decode(buf, offset)?
+    _MqttBinaryData.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -145,9 +153,10 @@ primitive _MqttSubscriptionIdentifier
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (ULong, USize)? =>
-    _MqttVariableByteInteger.decode(buf, offset)?
+    _MqttVariableByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -170,9 +179,10 @@ primitive _MqttSessionExpiryInterval
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U32, USize)? =>
-    _MqttFourByteInteger.decode(buf, offset)?
+    _MqttFourByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -195,9 +205,10 @@ primitive _MqttAssignedClientIdentifier
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf,  offset)?
+    _MqttUtf8String.decode(buf,  offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -220,9 +231,10 @@ primitive _MqttServerKeepAlive
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U16, USize)? =>
-    _MqttTwoByteInteger.decode(buf, offset)?
+    _MqttTwoByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -245,9 +257,10 @@ primitive _MqttAuthenticationMethod
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf, offset)?
+    _MqttUtf8String.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -270,9 +283,10 @@ primitive _MqttAuthenticationData
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Array[U8] iso^, USize)? =>
-    _MqttBinaryData.decode(buf, offset)?
+    _MqttBinaryData.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -295,8 +309,12 @@ primitive _MqttRequestProblemInformation
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(
@@ -321,9 +339,10 @@ primitive _MqttWillDelayInterval
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U32, USize)? =>
-    _MqttFourByteInteger.decode(buf, offset)?
+    _MqttFourByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -346,8 +365,12 @@ primitive _MqttRequestResponseInformation
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(
@@ -372,9 +395,10 @@ primitive _MqttResponseInformation
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf, offset)?
+    _MqttUtf8String.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -397,9 +421,10 @@ primitive _MqttServerReference
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf, offset)?
+    _MqttUtf8String.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -422,9 +447,10 @@ primitive _MqttReasonString
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
-    _MqttUtf8String.decode(buf, offset)?
+    _MqttUtf8String.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -447,9 +473,10 @@ primitive _MqttReceiveMaximum
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U16, USize)? =>
-    _MqttTwoByteInteger.decode(buf, offset)?
+    _MqttTwoByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -472,9 +499,10 @@ primitive _MqttTopicAliasMaximum
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U16, USize)? =>
-    _MqttTwoByteInteger.decode(buf, offset)?
+    _MqttTwoByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -497,9 +525,10 @@ primitive _MqttTopicAlias
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U16, USize)? =>
-    _MqttTwoByteInteger.decode(buf, offset)?
+    _MqttTwoByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -522,8 +551,12 @@ primitive _MqttMaximumQoS
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(
@@ -548,8 +581,12 @@ primitive _MqttRetainAvailable
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(
@@ -574,9 +611,10 @@ primitive _MqttUserProperty
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : ((String iso^, String iso^), USize)? =>
-    _MqttUtf8StringPair.decode(buf, offset)?
+    _MqttUtf8StringPair.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -599,9 +637,10 @@ primitive _MqttMaximumPacketSize
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (U32, USize)? =>
-    _MqttFourByteInteger.decode(buf, offset)?
+    _MqttFourByteInteger.decode(buf, offset, limit)?
 
   fun encode(
     buf: Array[U8] iso,
@@ -624,8 +663,12 @@ primitive _MqttWildcardSubscriptionAvailable
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(
@@ -650,8 +693,12 @@ primitive _MqttSubscriptionIdentifierAvailable
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(
@@ -676,8 +723,12 @@ primitive _MqttSharedSubscriptionAvailable
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (Bool, USize)? =>
+    if offset >= limit then
+      error
+    end
     (buf(offset)? == 1, 1)
 
   fun encode(

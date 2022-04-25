@@ -18,14 +18,14 @@ class _TestPubRec is UnitTest
 
     let buf = MqttEncoder.pubrec(consume origin, 0, MqttVersion311)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf, MqttVersion311)?
     | (MqttDecodeDone, (MqttPubRec, let pkt: MqttPubRecPacket), _) =>
       h.assert_eq[U16](MqttPubRec.packet_identifier(pkt), 65535)
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not PUBREC")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBREC packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -36,7 +36,7 @@ class _TestPubRec is UnitTest
 
     let buf = MqttEncoder.pubrec(origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttPubRec, let pkt: MqttPubRecPacket), _) =>
@@ -46,7 +46,7 @@ class _TestPubRec is UnitTest
       try _TestUtils.assert_user_properties_eq(h, (MqttPubRec.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar"); ("hello", "world")]) else h.fail("Expect [(\"foo\", \"bar\"), (\"hello\", \"world\")], but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not PUBREC")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBREC packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -57,7 +57,7 @@ class _TestPubRec is UnitTest
 
     let buf = MqttEncoder.pubrec(origin, 32)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttPubRec, let pkt: MqttPubRecPacket), _) =>
@@ -67,7 +67,7 @@ class _TestPubRec is UnitTest
       try _TestUtils.assert_user_properties_eq(h, (MqttPubRec.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar")]) else h.fail("Expect [(\"foo\", \"bar\")], but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not PUBREC")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBREC packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

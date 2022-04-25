@@ -89,7 +89,7 @@ primitive _MqttPubRelDecoder
     version: MqttVersion = MqttVersion5)
   : MqttPubRelPacket? =>
     var offset' = offset
-    (let packet_identifier: U16, let packet_identifier_size) = _MqttTwoByteInteger.decode(buf, offset')?
+    (let packet_identifier: U16, let packet_identifier_size) = _MqttTwoByteInteger.decode(buf, offset', limit)?
     offset' = offset' + packet_identifier_size
     if \likely\ version == MqttVersion5 then
       let reason_code: MqttPubRelReasonCode =
@@ -99,7 +99,7 @@ primitive _MqttPubRelDecoder
           MqttSuccess
         end
       offset' = offset' + 1
-      (let property_length', let property_length_size) = _MqttVariableByteInteger.decode(buf, offset')?
+      (let property_length', let property_length_size) = _MqttVariableByteInteger.decode(buf, offset', limit)?
       offset' = offset' + property_length_size
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
@@ -110,11 +110,11 @@ primitive _MqttPubRelDecoder
         decoded_length = decoded_length + 1
         match identifier
         | _MqttReasonString() =>
-          (let reason_string', let reason_string_size) = _MqttReasonString.decode(buf, offset' + decoded_length)?
+          (let reason_string', let reason_string_size) = _MqttReasonString.decode(buf, offset' + decoded_length, limit)?
           reason_string = consume reason_string'
           decoded_length = decoded_length + reason_string_size
         | _MqttUserProperty() =>
-          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
           user_properties.push(consume user_property)
           decoded_length = decoded_length + user_property_size
         end

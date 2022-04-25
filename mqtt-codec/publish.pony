@@ -274,22 +274,22 @@ primitive _MqttPublishDecoder
     let dup_flag = _MqttDup.decode(header)
     let qos_level = _MqttQoSDecoder(header)
     let retain = _MqttRetain.decode(header)
-    (let topic_name: String val, let topic_name_size: USize) = _MqttUtf8String.decode(buf, offset')?
+    (let topic_name: String val, let topic_name_size: USize) = _MqttUtf8String.decode(buf, offset', limit)?
     offset' = offset' + topic_name_size
     var packet_identifier: U16 = 0
     match qos_level
     | MqttQoS1 =>
-      (let packet_identifier': U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+      (let packet_identifier': U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset', limit)?
       offset' = offset' + packet_identifier_size
       packet_identifier = packet_identifier'
     | MqttQoS2 =>
-      (let packet_identifier': U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+      (let packet_identifier': U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset', limit)?
       offset' = offset' + packet_identifier_size
       packet_identifier = packet_identifier'
     end
     var payload: (Array[U8] val | None) = None
     if \likely\ version == MqttVersion5 then
-      (let property_length': ULong, let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset')?
+      (let property_length': ULong, let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset', limit)?
       offset' = offset' + property_length_size
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
@@ -306,35 +306,35 @@ primitive _MqttPublishDecoder
         decoded_length = decoded_length + 1
         match identifier
         | _MqttPayloadFormatIndicator() =>
-          (let payload_format_indicator', let payload_format_indicator_size) = _MqttPayloadFormatIndicator.decode(buf, offset' + decoded_length)?
+          (let payload_format_indicator', let payload_format_indicator_size) = _MqttPayloadFormatIndicator.decode(buf, offset' + decoded_length, limit)?
           payload_format_indicator = payload_format_indicator'
           decoded_length = decoded_length + payload_format_indicator_size
         | _MqttMessageExpiryInterval() =>
-          (let message_expiry_interval', let message_expiry_interval_size) = _MqttMessageExpiryInterval.decode(buf, offset' + decoded_length)?
+          (let message_expiry_interval', let message_expiry_interval_size) = _MqttMessageExpiryInterval.decode(buf, offset' + decoded_length, limit)?
           message_expiry_interval = message_expiry_interval'
           decoded_length = decoded_length + message_expiry_interval_size
         | _MqttTopicAlias() =>
-          (let topic_alias', let topic_alias_size) = _MqttTopicAlias.decode(buf, offset' + decoded_length)?
+          (let topic_alias', let topic_alias_size) = _MqttTopicAlias.decode(buf, offset' + decoded_length, limit)?
           topic_alias = topic_alias'
           decoded_length = decoded_length + topic_alias_size
         | _MqttResponseTopic() =>
-          (let response_topic', let response_topic_size) = _MqttResponseTopic.decode(buf, offset' + decoded_length)?
+          (let response_topic', let response_topic_size) = _MqttResponseTopic.decode(buf, offset' + decoded_length, limit)?
           response_topic = consume response_topic'
           decoded_length = decoded_length + response_topic_size
         | _MqttCorrelationData() =>
-          (let correlation_data', let correlation_data_size) = _MqttCorrelationData.decode(buf, offset' + decoded_length)?
+          (let correlation_data', let correlation_data_size) = _MqttCorrelationData.decode(buf, offset' + decoded_length, limit)?
           correlation_data = consume correlation_data'
           decoded_length = decoded_length + correlation_data_size
         | _MqttUserProperty() =>
-          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
           user_properties.push(consume user_property)
           decoded_length = decoded_length + user_property_size
         | _MqttSubscriptionIdentifier() =>
-          (let subscription_identifier', let subscription_identifier_size) = _MqttSubscriptionIdentifier.decode(buf, offset' + decoded_length)?
+          (let subscription_identifier', let subscription_identifier_size) = _MqttSubscriptionIdentifier.decode(buf, offset' + decoded_length, limit)?
           subscription_identifier = subscription_identifier'
           decoded_length = decoded_length + subscription_identifier_size
         | _MqttContentType() =>
-          (let content_type': String iso, let content_type_size) = _MqttContentType.decode(buf, offset' + decoded_length)?
+          (let content_type': String iso, let content_type_size) = _MqttContentType.decode(buf, offset' + decoded_length, limit)?
           content_type = consume content_type'
           decoded_length = decoded_length + content_type_size
         end

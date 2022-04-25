@@ -14,7 +14,7 @@ class _TestAuth is UnitTest
 
     let buf = MqttEncoder.auth(origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?] else [0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttAuth, let pkt: MqttAuthPacket), _) =>
@@ -25,7 +25,7 @@ class _TestAuth is UnitTest
       try _TestUtils.assert_user_properties_eq(h, (MqttAuth.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar"); ("hello", "world")]) else h.fail("Expect [(\"foo\", \"bar\"), (\"hello\", \"world\")], but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not AUTH")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -36,7 +36,7 @@ class _TestAuth is UnitTest
 
     let buf = MqttEncoder.auth(origin, 45)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttAuth, let pkt: MqttAuthPacket), _) =>
@@ -47,7 +47,7 @@ class _TestAuth is UnitTest
       try _TestUtils.assert_user_properties_eq(h, (MqttAuth.user_properties(pkt) as Array[MqttUserProperty] val), [("foo", "bar")]) else h.fail("Expect [(\"foo\", \"bar\")], but got None") end
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not AUTH")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -62,14 +62,14 @@ class _TestAuth is UnitTest
 
     let buf = MqttEncoder.auth(consume origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttAuth, let pkt: MqttAuthPacket), _) =>
       h.assert_eq[U8](MqttAuth.reason_code(pkt)(), MqttSuccess())
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not AUTH")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded AUTH packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

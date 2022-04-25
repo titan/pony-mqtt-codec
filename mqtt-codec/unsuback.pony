@@ -96,7 +96,7 @@ primitive _MqttUnSubAckDecoder
   : MqttUnSubAckPacket? =>
     var offset' = offset
 
-    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset', limit)?
     offset' = offset' + packet_identifier_size
 
     var reason_string: (String | None) = None
@@ -104,7 +104,7 @@ primitive _MqttUnSubAckDecoder
     var reason_codes: (Array[MqttUnSubAckReasonCode] iso | None) = None
 
     if \likely\ version == MqttVersion5 then
-      (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset')?
+      (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset', limit)?
       offset' = offset' + property_length_size
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
@@ -114,11 +114,11 @@ primitive _MqttUnSubAckDecoder
         decoded_length = decoded_length + 1
         match identifier
         | _MqttReasonString() =>
-          (let reason_string', let reason_string_size) = _MqttReasonString.decode(buf, offset' + decoded_length)?
+          (let reason_string', let reason_string_size) = _MqttReasonString.decode(buf, offset' + decoded_length, limit)?
           reason_string = consume reason_string'
           decoded_length = decoded_length + reason_string_size
         | _MqttUserProperty() =>
-          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
           try (user_properties as Array[MqttUserProperty] iso).push(consume user_property) end
           decoded_length = decoded_length + user_property_size
         end

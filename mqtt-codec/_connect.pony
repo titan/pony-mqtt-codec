@@ -23,7 +23,7 @@ class _TestConnect is UnitTest
 
     let buf = MqttEncoder.connect(consume origin, MqttVersion311)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf) ?
     | (MqttDecodeDone, (MqttConnect, let pkt: MqttConnectPacket), _) =>
@@ -35,7 +35,7 @@ class _TestConnect is UnitTest
       try h.assert_array_eq[U8](MqttConnect.will_payload(pkt) as Array[U8] val, [4; 5; 6; 7]) else h.fail("Expect will-payload to be [4, 5, 6, 7] but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not CONNECT")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNECT packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -80,7 +80,7 @@ class _TestConnect is UnitTest
 
     let buf = MqttEncoder.connect(consume origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf) ?
     | (MqttDecodeDone, (MqttConnect, let pkt: MqttConnectPacket), _) =>
@@ -128,7 +128,7 @@ class _TestConnect is UnitTest
       try h.assert_array_eq[U8](MqttConnect.password(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect password to be [0, 1, 2, 3] but got None") end
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not CONNECT")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNECT packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

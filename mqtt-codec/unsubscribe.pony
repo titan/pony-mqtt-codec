@@ -70,11 +70,11 @@ primitive _MqttUnSubscribeDecoder
     version: MqttVersion = MqttVersion5)
   : MqttUnSubscribePacket? =>
     var offset' = offset
-    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset', limit)?
     offset' = offset' + packet_identifier_size
     var user_properties: (Array[MqttUserProperty] iso | None) = None
     if \likely\ version == MqttVersion5 then
-      (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset')?
+      (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset', limit)?
       offset' = offset' + property_length_size
       let property_length = property_length'.usize()
       var decoded_length: USize = 0
@@ -84,7 +84,7 @@ primitive _MqttUnSubscribeDecoder
         decoded_length = decoded_length + 1
         match identifier
         | _MqttUserProperty() =>
-          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
           try (user_properties as Array[MqttUserProperty] iso).push(consume user_property) end
           decoded_length = decoded_length + user_property_size
         end
@@ -93,7 +93,7 @@ primitive _MqttUnSubscribeDecoder
     end
     var topic_filters: Array[String val] iso = recover iso Array[String val] end
     while offset' < limit do
-      (let topic_filter: String iso, let topic_filter_size) = _MqttUtf8String.decode(buf, offset')?
+      (let topic_filter: String iso, let topic_filter_size) = _MqttUtf8String.decode(buf, offset', limit)?
       offset' = offset' + topic_filter_size
       topic_filters.push(consume topic_filter)
     end

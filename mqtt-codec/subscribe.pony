@@ -214,10 +214,10 @@ primitive _MqttSubscribeDecoder
     var subscription_identifier: ULong = 0
     var user_properties: (Array[MqttUserProperty] iso | None) = None
 
-    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset', limit)?
     offset' = offset' + packet_identifier_size
 
-    (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset')?
+    (let property_length', let property_length_size: USize) = _MqttVariableByteInteger.decode(buf, offset', limit)?
     offset' = offset' + property_length_size
     let property_length = property_length'.usize()
     var decoded_length: USize = 0
@@ -227,11 +227,11 @@ primitive _MqttSubscribeDecoder
       decoded_length = decoded_length + 1
       match identifier
       | _MqttSubscriptionIdentifier() =>
-        (let subscription_identifier', let subscription_identifier_size) = _MqttSubscriptionIdentifier.decode(buf, offset' + decoded_length)?
+        (let subscription_identifier', let subscription_identifier_size) = _MqttSubscriptionIdentifier.decode(buf, offset' + decoded_length, limit)?
         subscription_identifier = subscription_identifier'
         decoded_length = decoded_length + subscription_identifier_size
       | _MqttUserProperty() =>
-        (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+        (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
         try (user_properties as Array[MqttUserProperty] iso).push(consume user_property) end
         decoded_length = decoded_length + user_property_size
       end
@@ -240,7 +240,7 @@ primitive _MqttSubscribeDecoder
 
     var subscriptions: Array[MqttSubscription] iso = recover iso Array[MqttSubscription] end
     while offset' < limit do
-      (let topic_filter: String, let topic_filter_size: USize) = _MqttUtf8String.decode(buf, offset')?
+      (let topic_filter: String, let topic_filter_size: USize) = _MqttUtf8String.decode(buf, offset', limit)?
       offset' = offset' + topic_filter_size
       let option = buf(offset')?
       offset' = offset' + 1
@@ -274,12 +274,12 @@ primitive _MqttSubscribeDecoder
     header: U8)
   : MqttSubscribePacket? =>
     var offset' = offset
-    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset')?
+    (let packet_identifier: U16, let packet_identifier_size: USize) = _MqttTwoByteInteger.decode(buf, offset', limit)?
     offset' = offset' + packet_identifier_size
     var subscription_identifier: ULong = 0
     var subscriptions: Array[MqttSubscription] iso = recover iso Array[MqttSubscription] end
     while offset' < limit do
-      (let topic_filter: String, let topic_filter_size) = _MqttUtf8String.decode(buf, offset')?
+      (let topic_filter: String, let topic_filter_size) = _MqttUtf8String.decode(buf, offset', limit)?
       offset' = offset' + topic_filter_size
       let option = buf(offset')?
       offset' = offset' + 1

@@ -19,7 +19,7 @@ class _TestConnAck is UnitTest
 
     let buf = MqttEncoder.connack(consume origin, 0, MqttVersion311)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf, MqttVersion311) ?
     | (MqttDecodeDone, (MqttConnAck, let pkt: MqttConnAckPacket), _) =>
@@ -27,7 +27,7 @@ class _TestConnAck is UnitTest
       h.assert_eq[MqttConnectReturnCode](MqttConnAck.return_code(pkt), MqttConnectionAccepted)
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not CONNACK")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNACK packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -37,7 +37,7 @@ class _TestConnAck is UnitTest
     let origin = _mqtt5_packet()
     let buf = MqttEncoder.connack(consume origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf) ?
     | (MqttDecodeDone, (MqttConnAck, let pkt: MqttConnAckPacket), _) =>
@@ -60,7 +60,7 @@ class _TestConnAck is UnitTest
       try h.assert_array_eq[U8](MqttConnAck.authentication_data(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not CONNACK")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNACK packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -71,7 +71,7 @@ class _TestConnAck is UnitTest
     let maximum_packet_size: USize = 125
     let buf = MqttEncoder.connack(origin, maximum_packet_size)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf) ?
     | (MqttDecodeDone, (MqttConnAck, let pkt: MqttConnAckPacket), _) =>
@@ -94,7 +94,7 @@ class _TestConnAck is UnitTest
       try h.assert_array_eq[U8](MqttConnAck.authentication_data(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect authentication-data to be [0, 1, 2, 3] but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not CONNACK")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded CONNACK packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

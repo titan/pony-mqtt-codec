@@ -529,7 +529,7 @@ primitive _MqttConnectDecoder
     header: U8)
   : MqttConnectPacket? =>
     var offset' = offset
-    (let protocol_name, let protocal_name_size) = _MqttUtf8String.decode(buf, offset')?
+    (let protocol_name, let protocal_name_size) = _MqttUtf8String.decode(buf, offset', limit)?
     offset' = offset' + protocal_name_size
     let protocol_version =
       match buf(offset')?
@@ -547,7 +547,7 @@ primitive _MqttConnectDecoder
     let will_retain = _MqttWillRetain.decode(flags)
     let password_flag = _MqttPasswordFlag.decode(flags)
     let user_name_flag = _MqttUserNameFlag.decode(flags)
-    (let keep_alive, let keep_alive_size) = _MqttTwoByteInteger.decode(buf, offset')?
+    (let keep_alive, let keep_alive_size) = _MqttTwoByteInteger.decode(buf, offset', limit)?
     offset' = offset' + keep_alive_size
     var session_expiry_interval: U32 = 0
     var receive_maximum: U16 = 0
@@ -564,7 +564,7 @@ primitive _MqttConnectDecoder
     var user_name: (String val | None) = None
     var password: (Array[U8] val | None) = None
     if \likely\ protocol_version == MqttVersion5 then
-      (let property_length', let property_length_size) = _MqttVariableByteInteger.decode(buf, offset')?
+      (let property_length', let property_length_size) = _MqttVariableByteInteger.decode(buf, offset', limit)?
       offset' = offset' + property_length_size
       user_properties = recover iso Array[MqttUserProperty] end
       let property_length = property_length'.usize()
@@ -574,50 +574,50 @@ primitive _MqttConnectDecoder
         decoded_length = decoded_length + 1
         match identifier
         | _MqttSessionExpiryInterval() =>
-          (let session_expiry_interval', let session_expiry_interval_size) = _MqttSessionExpiryInterval.decode(buf, offset' + decoded_length)?
+          (let session_expiry_interval', let session_expiry_interval_size) = _MqttSessionExpiryInterval.decode(buf, offset' + decoded_length, limit)?
           session_expiry_interval = session_expiry_interval'
           decoded_length = decoded_length + session_expiry_interval_size
         | _MqttReceiveMaximum() =>
-          (let receive_maximum', let receive_maximum_size) = _MqttReceiveMaximum.decode(buf, offset' + decoded_length)?
+          (let receive_maximum', let receive_maximum_size) = _MqttReceiveMaximum.decode(buf, offset' + decoded_length, limit)?
           receive_maximum = receive_maximum'
           decoded_length = decoded_length + receive_maximum_size
         | _MqttMaximumPacketSize() =>
-          (let maximum_packet_size', let maximum_packet_size_size) = _MqttMaximumPacketSize.decode(buf, offset' + decoded_length)?
+          (let maximum_packet_size', let maximum_packet_size_size) = _MqttMaximumPacketSize.decode(buf, offset' + decoded_length, limit)?
           maximum_packet_size = maximum_packet_size'
           decoded_length = decoded_length + maximum_packet_size_size
         | _MqttTopicAliasMaximum() =>
-          (let topic_alias_maximum', let topic_alias_maximum_size) = _MqttTopicAliasMaximum.decode(buf, offset' + decoded_length)?
+          (let topic_alias_maximum', let topic_alias_maximum_size) = _MqttTopicAliasMaximum.decode(buf, offset' + decoded_length, limit)?
           topic_alias_maximum = topic_alias_maximum'
           decoded_length = decoded_length + topic_alias_maximum_size
         | _MqttRequestResponseInformation() =>
-          (let request_response_information', let request_response_information_size) = _MqttRequestResponseInformation.decode(buf, offset' + decoded_length)?
+          (let request_response_information', let request_response_information_size) = _MqttRequestResponseInformation.decode(buf, offset' + decoded_length, limit)?
           request_response_information = request_response_information'
           decoded_length = decoded_length + request_response_information_size
         | _MqttRequestProblemInformation() =>
-          (let request_problem_information', let request_problem_information_size) = _MqttRequestResponseInformation.decode(buf, offset' + decoded_length)?
+          (let request_problem_information', let request_problem_information_size) = _MqttRequestResponseInformation.decode(buf, offset' + decoded_length, limit)?
           request_problem_information = request_problem_information'
           decoded_length = decoded_length + request_problem_information_size
         | _MqttUserProperty() =>
-          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+          (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
           try (user_properties as Array[MqttUserProperty] iso).push(consume user_property) end
           decoded_length = decoded_length + user_property_size
         | _MqttAuthenticationMethod() =>
-          (let authentication_method', let  authentication_method_size) = _MqttAuthenticationMethod.decode(buf, offset' + decoded_length)?
+          (let authentication_method', let  authentication_method_size) = _MqttAuthenticationMethod.decode(buf, offset' + decoded_length, limit)?
           authentication_method = consume authentication_method'
           decoded_length = decoded_length + authentication_method_size
         | _MqttAuthenticationData() =>
-          (let authentication_data', let authentication_data_size) = _MqttAuthenticationData.decode(buf, offset' + decoded_length)?
+          (let authentication_data', let authentication_data_size) = _MqttAuthenticationData.decode(buf, offset' + decoded_length, limit)?
           authentication_data = consume authentication_data'
           decoded_length = decoded_length + authentication_data_size
         end
       end
       offset' = offset' + decoded_length
     end
-    (let client_identifier, let client_identifier_size) = _MqttUtf8String.decode(buf, offset')?
+    (let client_identifier, let client_identifier_size) = _MqttUtf8String.decode(buf, offset', limit)?
     offset' = offset' + client_identifier_size
     if \unlikely\ will_flag then
       if protocol_version == MqttVersion5 then
-        (let will_property_length', let will_property_length_size) = _MqttVariableByteInteger.decode(buf, offset')?
+        (let will_property_length', let will_property_length_size) = _MqttVariableByteInteger.decode(buf, offset', limit)?
         offset' = offset' + will_property_length_size
         let will_property_length = will_property_length'.usize()
         var will_decoded_length: USize = 0
@@ -633,31 +633,31 @@ primitive _MqttConnectDecoder
           will_decoded_length = will_decoded_length + 1
           match identifier
           | _MqttWillDelayInterval() =>
-            (let will_delay_interval', let will_delay_interval_size) = _MqttWillDelayInterval.decode(buf, offset' + will_decoded_length)?
+            (let will_delay_interval', let will_delay_interval_size) = _MqttWillDelayInterval.decode(buf, offset' + will_decoded_length, limit)?
             will_delay_interval = will_delay_interval'
             will_decoded_length = will_decoded_length + will_delay_interval_size
           | _MqttPayloadFormatIndicator() =>
-            (let payload_format_indicator', let payload_format_indicator_size) = _MqttPayloadFormatIndicator.decode(buf, offset' + will_decoded_length)?
+            (let payload_format_indicator', let payload_format_indicator_size) = _MqttPayloadFormatIndicator.decode(buf, offset' + will_decoded_length, limit)?
             payload_format_indicator = payload_format_indicator'
             will_decoded_length = will_decoded_length + payload_format_indicator_size
           | _MqttMessageExpiryInterval() =>
-            (let message_expiry_interval', let message_expiry_interval_size) = _MqttMessageExpiryInterval.decode(buf, offset' + will_decoded_length)?
+            (let message_expiry_interval', let message_expiry_interval_size) = _MqttMessageExpiryInterval.decode(buf, offset' + will_decoded_length, limit)?
             message_expiry_interval = message_expiry_interval'
             will_decoded_length = will_decoded_length + message_expiry_interval_size
           | _MqttContentType() =>
-            (let content_type', let content_type_size) = _MqttContentType.decode(buf, offset' + will_decoded_length)?
+            (let content_type', let content_type_size) = _MqttContentType.decode(buf, offset' + will_decoded_length, limit)?
             content_type = consume content_type'
             will_decoded_length = will_decoded_length + content_type_size
           | _MqttResponseTopic() =>
-            (let response_topic', let response_topic_size) = _MqttResponseTopic.decode(buf, offset' + will_decoded_length)?
+            (let response_topic', let response_topic_size) = _MqttResponseTopic.decode(buf, offset' + will_decoded_length, limit)?
             response_topic = consume response_topic'
             will_decoded_length = will_decoded_length + response_topic_size
           | _MqttCorrelationData() =>
-            (let correlation_data', let correlation_data_size) = _MqttCorrelationData.decode(buf, offset' + will_decoded_length)?
+            (let correlation_data', let correlation_data_size) = _MqttCorrelationData.decode(buf, offset' + will_decoded_length, limit)?
             correlation_data = consume correlation_data'
             will_decoded_length = will_decoded_length + correlation_data_size
           | _MqttUserProperty() =>
-            (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + will_decoded_length)?
+            (let user_property, let user_property_size) = _MqttUserProperty.decode(buf, offset' + will_decoded_length, limit)?
             will_user_properties.push(consume user_property)
             will_decoded_length = will_decoded_length + user_property_size
           end
@@ -673,20 +673,20 @@ primitive _MqttConnectDecoder
           consume will_user_properties
         )
       end
-      (let will_topic': String val, let will_topic_size) = _MqttUtf8String.decode(buf, offset')?
+      (let will_topic': String val, let will_topic_size) = _MqttUtf8String.decode(buf, offset', limit)?
       offset' = offset' + will_topic_size
       will_topic = will_topic'
-      (let will_payload': Array[U8] val, let will_payload_size) = _MqttBinaryData.decode(buf, offset')?
+      (let will_payload': Array[U8] val, let will_payload_size) = _MqttBinaryData.decode(buf, offset', limit)?
       offset' = offset' + will_payload_size
       will_payload = will_payload'
     end
     if user_name_flag then
-      (let user_name': String val, let user_name_size) = _MqttUtf8String.decode(buf, offset')?
+      (let user_name': String val, let user_name_size) = _MqttUtf8String.decode(buf, offset', limit)?
       offset' = offset' + user_name_size
       user_name = user_name'
     end
     if password_flag then
-      (let password': Array[U8] val, let password_size) = _MqttBinaryData.decode(buf, offset')?
+      (let password': Array[U8] val, let password_size) = _MqttBinaryData.decode(buf, offset', limit)?
       offset' = offset' + password_size
       password = password'
     end

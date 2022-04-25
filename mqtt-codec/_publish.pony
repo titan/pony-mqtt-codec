@@ -22,7 +22,7 @@ class _TestPublish is UnitTest
 
     let buf = MqttEncoder.publish(origin, MqttVersion311)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf, MqttVersion311)?
     | (MqttDecodeDone, (MqttPublish, let pkt: MqttPublishPacket), _) =>
@@ -34,7 +34,7 @@ class _TestPublish is UnitTest
       try h.assert_array_eq[U8](MqttPublish.payload(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect payload to be [0, 1, 2, 3] but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not PUBLISH")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBLISH packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -64,7 +64,7 @@ class _TestPublish is UnitTest
       )
     let buf = MqttEncoder.publish(origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttPublish, let pkt: MqttPublishPacket), _) =>
@@ -83,7 +83,7 @@ class _TestPublish is UnitTest
       try h.assert_array_eq[U8](MqttPublish.payload(pkt) as Array[U8] val, [0; 1; 2; 3]) else h.fail("Expect payload to be [0, 1, 2, 3] but got None") end
     | (MqttDecodeDone, _, _) =>
       h.fail("Encoded packet is not PUBLISH")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded PUBLISH packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

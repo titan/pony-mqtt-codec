@@ -1,11 +1,18 @@
 primitive _MqttUtf8String
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : (String iso^, USize)? =>
+    if (offset + 1) >= limit then
+      error
+    end
     let msb = buf(offset)?.usize()
     let lsb = buf(offset + 1)?.usize()
     let len = (msb << 8) or lsb
+    if (len + 2) > limit then
+      error
+    end
     let data: Array[U8] iso = recover iso Array[U8](len) end
     data.copy_from(buf, offset + 2, 0, len)
     (String.from_iso_array(consume data), 2 + len)
@@ -30,10 +37,14 @@ primitive _MqttUtf8String
 primitive _MqttUtf8StringPair
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
+    offset: USize = 0,
+    limit: USize)
   : ((String iso^, String iso^), USize)? =>
-    (let key, let key_consumed) = _MqttUtf8String.decode(buf, offset)?
-    (let value, let value_consumed) = _MqttUtf8String.decode(buf, offset + key_consumed)?
+    if (offset + 1) >= limit then
+      error
+    end
+    (let key, let key_consumed) = _MqttUtf8String.decode(buf, offset, limit)?
+    (let value, let value_consumed) = _MqttUtf8String.decode(buf, offset + key_consumed, limit)?
     ((consume key, consume value), key_consumed + value_consumed)
 
   fun encode(
@@ -55,8 +66,12 @@ primitive _MqttUtf8StringPair
 primitive _MqttTwoByteInteger
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
-  : (U16, USize) ? =>
+    offset: USize = 0,
+    limit: USize)
+  : (U16, USize)? =>
+    if (offset + 1) >= limit then
+      error
+    end
     let msb = buf(offset)?.u16()
     let lsb = buf(offset + 1)?.u16()
     ((msb << 8) or lsb, 2)
@@ -79,8 +94,12 @@ primitive _MqttTwoByteInteger
 primitive _MqttFourByteInteger
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
-  : (U32, USize) ? =>
+    offset: USize = 0,
+    limit: USize)
+  : (U32, USize)? =>
+    if (offset + 3) >= limit then
+      error
+    end
     let mmsb = buf(offset)?.u32()
     let mlsb = buf(offset + 1)?.u32()
     let lmsb = buf(offset + 2)?.u32()
@@ -118,13 +137,17 @@ primitive _MqttVariableByteInteger
 
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
-  : (ULong, USize) ? =>
+    offset: USize = 0,
+    limit: USize)
+  : (ULong, USize)? =>
     var x: ULong = 0
     var idx: USize = offset
     var byte: U8
     var multiplier: ULong = 0
     repeat
+      if idx >= limit then
+        error
+      end
       byte = buf(idx)?
       x = x + ((byte and 0x7F).ulong() << multiplier)
       if multiplier > 21 then
@@ -169,10 +192,20 @@ primitive _MqttVariableByteInteger
 primitive _MqttBinaryData
   fun decode(
     buf: Array[U8] val,
-    offset: USize = 0)
-  : (Array[U8] iso^, USize) ? =>
-    (let len, let consumed) = _MqttTwoByteInteger.decode(buf, offset)?
+    offset: USize = 0,
+    limit: USize)
+  : (Array[U8] iso^, USize)? =>
+    if (offset + 1) >= limit then
+      error
+    end
+    (let len: U16, let consumed: USize) = _MqttTwoByteInteger.decode(buf, offset, limit)?
+    if (offset + consumed) > limit then
+      error
+    end
     let len' = len.usize()
+    if (offset + consumed + len') > limit then
+      error
+    end
     let data = recover iso Array[U8](len') end
     data.copy_from(buf, offset + consumed, 0, len')
     (consume data, consumed + len')

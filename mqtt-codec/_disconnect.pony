@@ -15,14 +15,14 @@ class _TestDisconnect is UnitTest
 
     let buf = MqttEncoder.disconnect(consume origin, 0, MqttVersion311)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf, MqttVersion311)?
     | (MqttDecodeDone, (MqttDisconnect, let pkt: MqttDisconnectPacket), _) =>
       None
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not DISCONNECT")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -33,7 +33,7 @@ class _TestDisconnect is UnitTest
 
     let buf = MqttEncoder.disconnect(origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttDisconnect, let pkt: MqttDisconnectPacket), _) =>
@@ -44,7 +44,7 @@ class _TestDisconnect is UnitTest
       try h.assert_eq[String val]((MqttDisconnect.server_reference(pkt) as String val), "Unknown") else h.fail("Expect server-reference to be Unknown but got None") end
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not DISCONNECT")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -55,7 +55,7 @@ class _TestDisconnect is UnitTest
 
     let buf = MqttEncoder.disconnect(origin, 45)
     let buf': Array[U8] iso = recover iso try [buf(1)?; buf(2)?] else [0; 0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttDisconnect, let pkt: MqttDisconnectPacket), _) =>
@@ -66,7 +66,7 @@ class _TestDisconnect is UnitTest
       try h.assert_eq[String val]((MqttDisconnect.server_reference(pkt) as String val), "Unknown") else h.fail("Expect server-reference to be Unknown but got None") end
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not DISCONNECT")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)
@@ -81,14 +81,14 @@ class _TestDisconnect is UnitTest
 
     let buf = MqttEncoder.disconnect(consume origin)
     let buf': Array[U8] iso = recover iso try [buf(1)?] else [0] end end
-    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0)? else (0, 1) end
+    (let remaining: ULong, let remainlen: USize) = try _MqttVariableByteInteger.decode(consume buf', 0, 2)? else (0, 1) end
     h.assert_eq[USize](remaining.usize() + remainlen + 1, buf.size())
     match MqttDecoder(consume buf)?
     | (MqttDecodeDone, (MqttDisconnect, let pkt: MqttDisconnectPacket), _) =>
       h.assert_eq[U8](MqttDisconnect.reason_code(pkt)(), MqttNormalDisconnection())
     | (MqttDecodeDone, let packet: MqttControlType, _) =>
       h.fail("Encoded packet is not DISCONNECT")
-    | MqttDecodeContinue =>
+    | (MqttDecodeContinue, _) =>
       h.fail("Encoded DISCONNECT packet is not completed")
     | (MqttDecodeError, let err: String val) =>
       h.fail(err)

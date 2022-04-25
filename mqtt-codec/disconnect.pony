@@ -41,7 +41,6 @@ type MqttDisconnectPacket is
   , (String val | None) // 5. server_reference
   )
 
-
 primitive MqttDisconnect
   """
   Disconnect notification
@@ -173,7 +172,7 @@ primitive _MqttDisconnectDecoder
             MqttUnspecifiedError
           end
         offset' = offset' + 1
-        (let property_length', let property_length_size) = _MqttVariableByteInteger.decode(buf, offset')?
+        (let property_length', let property_length_size) = _MqttVariableByteInteger.decode(buf, offset', limit)?
         offset' = offset' + property_length_size
         let property_length = property_length'.usize()
         var decoded_length: USize = 0
@@ -183,19 +182,19 @@ primitive _MqttDisconnectDecoder
           decoded_length = decoded_length + 1
           match identifier
           | _MqttSessionExpiryInterval() =>
-            (let session_expiry_interval': U32, let session_expiry_interval_size: USize) = _MqttSessionExpiryInterval.decode(buf, offset' + decoded_length)?
+            (let session_expiry_interval': U32, let session_expiry_interval_size: USize) = _MqttSessionExpiryInterval.decode(buf, offset' + decoded_length, limit)?
             session_expiry_interval = session_expiry_interval'
             decoded_length = decoded_length + session_expiry_interval_size
           | _MqttReasonString() =>
-            (let reason_string': String, let reason_string_size: USize) = _MqttReasonString.decode(buf, offset' + decoded_length)?
+            (let reason_string': String, let reason_string_size: USize) = _MqttReasonString.decode(buf, offset' + decoded_length, limit)?
             reason_string = reason_string'
             decoded_length = decoded_length + reason_string_size
           | _MqttUserProperty() =>
-            (let user_property: MqttUserProperty, let user_property_size: USize) = _MqttUserProperty.decode(buf, offset' + decoded_length)?
+            (let user_property: MqttUserProperty, let user_property_size: USize) = _MqttUserProperty.decode(buf, offset' + decoded_length, limit)?
             try (user_properties as Array[MqttUserProperty]).push(user_property) end
             decoded_length = decoded_length + user_property_size
           | _MqttServerReference() =>
-            (let server_reference': String, let server_reference_size: USize) = _MqttServerReference.decode(buf, offset' + decoded_length)?
+            (let server_reference': String, let server_reference_size: USize) = _MqttServerReference.decode(buf, offset' + decoded_length, limit)?
             server_reference = server_reference'
             decoded_length = decoded_length + server_reference_size
           end

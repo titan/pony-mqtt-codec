@@ -6,36 +6,51 @@ primitive MqttDecodeError
 
 type MqttDecodeResultType[A] is
   ( (MqttDecodeDone, A, (Array[U8] iso^ | None))
-  | MqttDecodeContinue
+  | (MqttDecodeContinue, Array[U8] iso^)
   | (MqttDecodeError, String val)
   )
 
 primitive MqttDecoder
   fun apply(
-    data: Array[U8] val,
+    data: Array[U8] iso,
     version: MqttVersion = MqttVersion5)
   : MqttDecodeResultType[MqttControlType]? =>
     let datasize: USize = data.size()
-    (let remaining, let remain_size) = try _MqttVariableByteInteger.decode(data, 1)? else (0, 1) end
-    let remaining': USize = remaining.usize()
-    match remaining'.isize() - (datasize - 1 - remain_size).isize()
+    let data': Array[U8] iso =
+      try
+        recover iso
+          match datasize
+          | 0 => [0; 0]
+          | 1 => [0; 0]
+          | 2 => [data(0)?; data(1)?]
+          | 3 => [data(0)?; data(1)?; data(2)?]
+          | 4 => [data(0)?; data(1)?; data(2)?; data(3)?]
+          else
+            [data(0)?; data(1)?; data(2)?; data(3)?; data(4)?]
+          end
+        end
+      else
+        [0; 0]
+      end
+    (let remaining', let remaining_size) = try _MqttVariableByteInteger.decode(consume data', 1, datasize)? else (0, 1) end
+    let remaining: USize = remaining'.usize()
+    match remaining.isize() - (datasize - 1 - remaining_size).isize()
     | let x: ISize if x > 0 =>
-      return MqttDecodeContinue
+      return (MqttDecodeContinue, consume data)
     | let x: ISize if x == 0 =>
       let header = data(0)?
-      let limit = datasize
-      _dispatch(data, 1 + remain_size, limit, header, None, version)?
+      let limit = 1 + remaining + remaining_size
+      _dispatch(consume data, 1 + remaining_size, limit, header, None, version)?
     else
       let header = data(0)?
-      let limit = 1 + remaining' + remain_size
+      let limit = 1 + remaining + remaining_size
       let remained_size = datasize - limit
-      let remained: Array[U8] iso = recover iso Array[U8](remained_size) end
-      remained.copy_from(data, limit, 0, remained_size)
-      _dispatch(data, 1 + remain_size, limit, header, consume remained, version)?
+      (let data'', let remained) = (consume data).chop(limit)
+      _dispatch(consume data'', 1 + remaining_size, limit, header, consume remained, version)?
     end
 
   fun _dispatch(
-    buf: Array[U8] val,
+    buf: Array[U8] iso,
     offset: USize = 0,
     limit: USize = 0,
     header: U8 = 0,
